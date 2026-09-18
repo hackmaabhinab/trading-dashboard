@@ -1,145 +1,169 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Globe, Send, DollarSign, Landmark, TrendingUp, Sparkles, AlertCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from "react";
+import ReactMarkdown from "react-markdown";
+import { supabase } from "@/lib/supabase";
+import { Globe2, Send, User, Bot, TrendingUp } from "lucide-react";
+
+interface ChatMessage {
+  id?: number;
+  sender: "user" | "assistant";
+  message: string;
+}
 
 export default function FundamentalsPage() {
-  const [messages, setMessages] = useState<Array<{ sender: 'user' | 'ai'; text: string }>>([
-    {
-      sender: 'ai',
-      text: 'Welcome to Macroeconomic & Forex Fundamental Desk. Main aapka Macro Analyst Copilot hoon. Gold (XAUUSD) vs USD inverse relationship, Federal Reserve Policy, FOMC decisions, Inflation (CPI/PPI), ya COT Report ke baare me kuch bhi poochhein.',
-    },
-  ]);
-  const [inputMsg, setInputMsg] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputMsg.trim()) return;
+  useEffect(() => {
+    const loadData = async () => {
+      const { data: chatData } = await supabase
+        .from("ai_chats")
+        .select("sender, message")
+        .eq("module", "fundamentals")
+        .order("created_at", { ascending: true });
 
-    const userText = inputMsg;
-    setMessages((prev) => [...prev, { sender: 'user', text: userText }]);
-    setInputMsg('');
-    setIsTyping(true);
-
-    setTimeout(() => {
-      let response = '';
-      const lower = userText.toLowerCase();
-
-      if (lower.includes('gold') || lower.includes('xau') || lower.includes('usd')) {
-        response = 'Gold vs USD Relationship: XAU/USD mostly inverse (ulta) move karta hai. Jab US Dollar Index (DXY) strong hota hai ya US Treasury Yields badhti hain, toh Gold drop hota hai kyunki Yield-bearing assets USD ko attractive banate hain. War/Geopolitical Tension ya Recession risk me Gold safe-haven ki tarah pump hota hai.';
-      } else if (lower.includes('fomc') || lower.includes('fed') || lower.includes('interest rate')) {
-        response = 'FOMC & Rate Decision Analysis: Agar Fed Interest Rates BADHATA (Rate Hike) hai, toh USD bullish aur Gold/Equities bearish hote hain. Agar Rates CUT karta hai ya Dovish stance leta hai, toh USD drop aur Gold rally karta hai. Always check Dot Plot and Powell Press Conference stance.';
-      } else if (lower.includes('cpi') || lower.includes('inflation')) {
-        response = 'Inflation (CPI Data): Higher-than-expected CPI ka matlab hai Inflation abhi bhi high hai. Isse Fed rate cuts delay kar sakta hai -> Result: USD Bullish, Gold Instant Drop. Lower CPI = Rate Cut expectations -> Gold Bullish.';
-      } else if (lower.includes('cot') || lower.includes('commitment')) {
-        response = 'COT Report Strategy: Commercial Institutions (Smart Money) ke Net Long vs Net Short positions track karein. Agar Commercials extreme Net Long hain, toh Macro Trend Bullish flip hone ke high chances hote hain.';
+      if (chatData && chatData.length > 0) {
+        setMessages(chatData as ChatMessage[]);
       } else {
-        response = `Macro View: "${userText}" par analysis. Forex Fundamentals me Central Bank Interest Rate Differential (Yield Spread) hi long-term trend direction decide karta hai.`;
+        setMessages([
+          {
+            sender: "assistant",
+            message:
+              "Welcome to Forex Fundamentals AI. Ask me about macroeconomics, CPI inflation data, NFP jobs reports, Federal Reserve Interest Rate decisions, or macroeconomic direction for Gold (XAUUSD) & Major Forex Pairs!",
+          },
+        ]);
       }
+    };
 
-      setMessages((prev) => [...prev, { sender: 'ai', text: response }]);
-      setIsTyping(false);
-    }, 1000);
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || loading) return;
+
+    const userMsg = input.trim();
+    setInput("");
+
+    const updatedChats: ChatMessage[] = [
+      ...messages,
+      { sender: "user", message: userMsg },
+    ];
+    setMessages(updatedChats);
+    setLoading(true);
+
+    await supabase.from("ai_chats").insert([
+      { module: "fundamentals", sender: "user", message: userMsg },
+    ]);
+
+    try {
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: userMsg,
+          module: "fundamentals",
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to generate AI response");
+
+      const aiReply = data.reply;
+      setMessages((prev) => [...prev, { sender: "assistant", message: aiReply }]);
+
+      await supabase.from("ai_chats").insert([
+        { module: "fundamentals", sender: "assistant", message: aiReply },
+      ]);
+    } catch (err: any) {
+      console.error("AI Chat Error:", err);
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: "assistant",
+          message: `⚠️ Error: ${err.message || "Failed to connect to Fundamentals AI"}`,
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const macroPrompts = [
-    'XAUUSD vs USD Inverse Relationship kyun hota hai?',
-    'FOMC Meeting outcome ko kaise analyze karein?',
-    'CPI Inflation Data ka Gold par kya impact padta hai?',
-    'US Dollar Index (DXY) ko XAUUSD ke sath kaise correlation me dekhein?',
-  ];
-
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="border-b border-blue-900/30 pb-6">
-        <h2 className="text-3xl font-extrabold text-slate-100 tracking-tight flex items-center gap-3">
-          <Globe className="w-8 h-8 text-blue-500" /> Forex Macro Fundamentals
-        </h2>
-        <p className="text-slate-400 text-sm mt-1">
-          Institutional drivers, Central Bank policies, Gold/USD dynamics & Economic events copilot
+    <div className="p-6 space-y-6 bg-[#070A10] min-h-screen text-slate-100 flex flex-col">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+          <Globe2 className="h-6 w-6 text-emerald-500" /> Forex Fundamentals AI
+        </h1>
+        <p className="text-slate-400 text-sm">
+          Macroeconomic news analysis, Central Bank policies & CPI/NFP market impact
         </p>
       </div>
 
-      {/* Quick Macro Topics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {macroPrompts.map((prompt, i) => (
-          <button
-            key={i}
-            onClick={() => setInputMsg(prompt)}
-            className="text-left p-3 bg-[#0B0F17] border border-blue-900/30 hover:border-blue-500/50 rounded-xl text-xs text-slate-300 hover:text-slate-100 transition-all flex items-center gap-2 group"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-blue-400 group-hover:scale-110 transition-transform shrink-0" />
-            <span>{prompt}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Fundamental AI Terminal */}
-      <div className="bg-[#0B0F17] border border-blue-900/30 rounded-2xl p-6 shadow-2xl flex flex-col h-[520px]">
-        <div className="flex items-center justify-between border-b border-blue-900/40 pb-4 mb-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-600/20 border border-blue-500/30 rounded-lg text-blue-400">
-              <Landmark className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-100">Macro Strategy Terminal</h3>
-              <p className="text-xs text-blue-400 font-mono">Central Bank & Gold Dynamic Engine Active</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Chat History */}
+      <div className="flex-1 bg-[#0B0F17] border border-slate-800 rounded-xl p-4 flex flex-col h-[calc(100vh-220px)]">
         <div className="flex-1 overflow-y-auto space-y-4 pr-2">
-          {messages.map((msg, index) => (
+          {messages.map((m, index) => (
             <div
               key={index}
               className={`flex items-start gap-3 ${
-                msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'
+                m.sender === "user" ? "flex-row-reverse" : "flex-row"
               }`}
             >
               <div
-                className={`p-2 rounded-lg text-xs font-bold ${
-                  msg.sender === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-[#070A10] border border-blue-900/40 text-blue-400'
+                className={`p-2 rounded-lg ${
+                  m.sender === "user" ? "bg-emerald-600" : "bg-slate-800 text-emerald-400"
                 }`}
               >
-                {msg.sender === 'user' ? 'YOU' : 'MACRO'}
+                {m.sender === "user" ? <User className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
               </div>
+
               <div
-                className={`max-w-xl p-4 rounded-2xl text-sm leading-relaxed ${
-                  msg.sender === 'user'
-                    ? 'bg-blue-600 text-white font-medium rounded-tr-none'
-                    : 'bg-[#070A10] border border-blue-900/40 text-slate-200 rounded-tl-none'
+                className={`max-w-[80%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
+                  m.sender === "user"
+                    ? "bg-emerald-600/20 border border-emerald-500/30 text-white"
+                    : "bg-[#070A10] border border-slate-800 text-slate-200"
                 }`}
               >
-                {msg.text}
+                {m.sender === "assistant" ? (
+                  <div className="prose prose-invert max-w-none text-sm space-y-2">
+                    <ReactMarkdown>{m.message}</ReactMarkdown>
+                  </div>
+                ) : (
+                  m.message
+                )}
               </div>
             </div>
           ))}
-          {isTyping && (
-            <div className="text-xs text-blue-400 font-mono animate-pulse flex items-center gap-2">
-              <TrendingUp className="w-3 h-3" /> Analyzing macroeconomic correlation...
+
+          {loading && (
+            <div className="flex items-center gap-2 text-slate-500 text-xs font-mono">
+              <Bot className="h-4 w-4 animate-spin text-emerald-500" /> AI is analyzing economic data...
             </div>
           )}
+          <div ref={chatEndRef} />
         </div>
 
-        {/* Input Field */}
-        <form onSubmit={handleSendMessage} className="mt-4 flex gap-3 pt-3 border-t border-blue-900/40">
+        <form onSubmit={handleSend} className="mt-4 flex gap-2">
           <input
             type="text"
-            value={inputMsg}
-            onChange={(e) => setInputMsg(e.target.value)}
-            placeholder="Ask about XAUUSD, DXY, FOMC, Rate Hikes, Inflation Data..."
-            className="flex-1 bg-[#070A10] border border-blue-900/40 rounded-xl px-4 py-2.5 text-sm text-slate-200 focus:outline-none focus:border-blue-500"
+            placeholder="Ask about NFP news, Interest rates impact, Gold direction..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="flex-1 bg-[#070A10] border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500"
           />
           <button
             type="submit"
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20"
+            disabled={loading}
+            className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 text-sm font-semibold transition-colors"
           >
-            <Send className="w-4 h-4" /> Analyze
+            <Send className="h-4 w-4" /> Send
           </button>
         </form>
       </div>

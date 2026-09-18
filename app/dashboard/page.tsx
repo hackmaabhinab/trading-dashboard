@@ -1,206 +1,147 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { 
-  Sparkles, 
-  X, 
-  Send, 
-  Bot, 
-  Zap, 
-  TrendingUp, 
-  ShieldCheck, 
-  HelpCircle,
-  Clock,
-  ChevronRight,
-  Maximize2
-} from 'lucide-react';
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { TrendingUp, Award, Target, Zap, Activity } from "lucide-react";
+
+interface Trade {
+  id?: number;
+  pair: string;
+  lot_size: number;
+  risk_percent: number;
+  rr: number;
+  outcome: "WIN" | "LOSS" | "BE";
+  setup: string;
+  emotion: string;
+  created_at?: string;
+}
 
 export default function OverviewPage() {
-  const [isGeminiDrawerOpen, setIsGeminiDrawerOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      sender: 'ai',
-      text: 'Namaste Abhinav! Main aapka Institutional Trading AI Assistant hoon. XAUUSD (Gold) SMC/ICT structure, COT data, ya Risk Management par kya analysis chahiye?'
-    }
-  ]);
-  const [inputMessage, setInputMessage] = useState('');
+  const [trades, setTrades] = useState<Trade[]>([]);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!inputMessage.trim()) return;
+  useEffect(() => {
+    const fetchOverviewData = async () => {
+      const { data, error } = await supabase
+        .from("trades")
+        .select("*")
+        .order("created_at", { ascending: false });
 
-    // Add user message
-    const userMsg = inputMessage;
-    setMessages((prev) => [...prev, { sender: 'user', text: userMsg }]);
-    setInputMessage('');
+      if (!error && data && data.length > 0) {
+        setTrades(data);
+      } else {
+        const saved = localStorage.getItem("trade_journal_logs");
+        if (saved) setTrades(JSON.parse(saved));
+      }
+    };
 
-    // Simulated Gemini AI Response
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: 'ai',
-          text: `Aapne pucha: "${userMsg}". Current market analysis ke mutabiq XAUUSD 4H Order Block par rejection le raha hai. Key Liquidity Levels sweep hone par high probability trade set-up ban sakta hai.`
-        }
-      ]);
-    }, 800);
-  };
+    fetchOverviewData();
+  }, []);
+
+  const totalTrades = trades.length;
+  const wins = trades.filter((t) => t.outcome === "WIN").length;
+  const losses = trades.filter((t) => t.outcome === "LOSS").length;
+  const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(1) : "0";
+  const avgRR =
+    totalTrades > 0
+      ? (trades.reduce((acc, curr) => acc + (Number(curr.rr) || 0), 0) / totalTrades).toFixed(2)
+      : "0.0";
+
+  const netR = trades.reduce((acc, curr) => {
+    if (curr.outcome === "WIN") return acc + (Number(curr.rr) || 1);
+    if (curr.outcome === "LOSS") return acc - 1;
+    return acc;
+  }, 0);
 
   return (
-    <div className="space-y-6 relative min-h-[85vh]">
-      
-      {/* Top Header & Gemini AI Trigger Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-blue-950/40 via-[#0B0F17] to-[#0B0F17] p-6 rounded-2xl border border-blue-900/30">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-black text-slate-100 flex items-center gap-2">
-            Overview <span className="text-blue-500 text-sm px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 font-medium">Live Dashboard</span>
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">Welcome back, trader. Here is your institutional market summary.</p>
-        </div>
-
-        {/* Gemini AI Open Drawer Button */}
-        <button
-          onClick={() => setIsGeminiDrawerOpen(true)}
-          className="flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-sm shadow-xl shadow-blue-600/20 active:scale-95 transition-all cursor-pointer border border-blue-400/30"
-        >
-          <Sparkles className="w-5 h-5 animate-pulse text-amber-300" />
-          <span>Ask Gemini AI</span>
-        </button>
+    <div className="p-6 space-y-8 bg-[#070A10] min-h-screen text-slate-100">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Performance Overview</h1>
+        <p className="text-slate-400 text-sm">Real-time statistics derived from your trade journal</p>
       </div>
 
-      {/* Main Dashboard Cards Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-[#0B0F17] p-6 rounded-2xl border border-blue-900/30 space-y-2">
-          <div className="flex items-center justify-between text-slate-400 text-sm font-medium">
-            <span>XAUUSD Bias</span>
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-[#0B0F17] border border-slate-800 rounded-xl p-5 space-y-2">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>TOTAL EXECUTIONS</span>
+            <Activity className="h-4 w-4 text-blue-500" />
           </div>
-          <p className="text-2xl font-bold text-emerald-400">BULLISH SMC</p>
-          <p className="text-xs text-slate-500">4H Order Block Holding Strong</p>
+          <div className="text-2xl font-extrabold text-white">{totalTrades}</div>
+          <p className="text-xs text-slate-500">{wins} Wins / {losses} Losses</p>
         </div>
 
-        <div className="bg-[#0B0F17] p-6 rounded-2xl border border-blue-900/30 space-y-2">
-          <div className="flex items-center justify-between text-slate-400 text-sm font-medium">
-            <span>Win Rate</span>
-            <Zap className="w-4 h-4 text-blue-400" />
+        <div className="bg-[#0B0F17] border border-slate-800 rounded-xl p-5 space-y-2">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>WIN RATE</span>
+            <Award className="h-4 w-4 text-emerald-500" />
           </div>
-          <p className="text-2xl font-bold text-slate-100">68.4%</p>
-          <p className="text-xs text-slate-500">Based on last 25 trades</p>
+          <div className="text-2xl font-extrabold text-emerald-400">{winRate}%</div>
+          <p className="text-xs text-slate-500">Based on evaluated trades</p>
         </div>
 
-        <div className="bg-[#0B0F17] p-6 rounded-2xl border border-blue-900/30 space-y-2">
-          <div className="flex items-center justify-between text-slate-400 text-sm font-medium">
-            <span>Account Risk</span>
-            <ShieldCheck className="w-4 h-4 text-indigo-400" />
+        <div className="bg-[#0B0F17] border border-slate-800 rounded-xl p-5 space-y-2">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>AVERAGE R:R</span>
+            <Target className="h-4 w-4 text-amber-500" />
           </div>
-          <p className="text-2xl font-bold text-slate-100">1.0% / Trade</p>
-          <p className="text-xs text-slate-500">Strict ICT Risk Parameters</p>
+          <div className="text-2xl font-extrabold text-amber-400">1:{avgRR}</div>
+          <p className="text-xs text-slate-500">Target reward ratio average</p>
+        </div>
+
+        <div className="bg-[#0B0F17] border border-slate-800 rounded-xl p-5 space-y-2">
+          <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+            <span>NET R GAIN</span>
+            <Zap className="h-4 w-4 text-purple-500" />
+          </div>
+          <div className={`text-2xl font-extrabold ${netR >= 0 ? "text-purple-400" : "text-rose-400"}`}>
+            {netR >= 0 ? `+${netR.toFixed(1)}R` : `${netR.toFixed(1)}R`}
+          </div>
+          <p className="text-xs text-slate-500">Cumulative risk-adjusted return</p>
         </div>
       </div>
 
-      {/* GEMINI AI SLIDING DRAWER OVERLAY */}
-      {isGeminiDrawerOpen && (
-        <div className="fixed inset-0 z-[10000] flex justify-end">
-          {/* Backdrop Blur */}
-          <div 
-            onClick={() => setIsGeminiDrawerOpen(false)}
-            className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity"
-          />
-
-          {/* Sliding Drawer Container */}
-          <div className="relative w-full max-w-md bg-[#0B0F17] border-l border-blue-900/40 h-full flex flex-col justify-between shadow-2xl z-[10001] animate-in slide-in-from-right duration-300">
-            
-            {/* Drawer Header */}
-            <div className="p-4 border-b border-blue-900/30 flex items-center justify-between bg-[#070A10]">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white shadow-lg">
-                  <Sparkles className="w-5 h-5 text-amber-300" />
-                </div>
-                <div>
-                  <h2 className="font-bold text-slate-100 text-sm flex items-center gap-1.5">
-                    Gemini AI Assistant
-                  </h2>
-                  <p className="text-[11px] text-slate-400">Institutional Market Intelligence</p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setIsGeminiDrawerOpen(false)}
-                className="p-2 rounded-xl bg-blue-950/50 border border-blue-900/50 text-slate-400 hover:text-white active:scale-95 transition-all cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Quick Prompt Suggestions */}
-            <div className="px-4 py-2 border-b border-blue-900/20 bg-[#080C14] flex items-center gap-2 overflow-x-auto text-xs whitespace-nowrap scrollbar-none">
-              <button 
-                onClick={() => setInputMessage('Analyze XAUUSD 4H Order Block')}
-                className="px-3 py-1.5 rounded-full bg-blue-950/40 border border-blue-800/40 text-blue-300 hover:bg-blue-900/50 transition-colors"
-              >
-                📊 Gold OB Analysis
-              </button>
-              <button 
-                onClick={() => setInputMessage('Calculate 1% Risk Lot Size')}
-                className="px-3 py-1.5 rounded-full bg-blue-950/40 border border-blue-800/40 text-blue-300 hover:bg-blue-900/50 transition-colors"
-              >
-                🧮 Risk Lot Calc
-              </button>
-              <button 
-                onClick={() => setInputMessage('COT Report Insights')}
-                className="px-3 py-1.5 rounded-full bg-blue-950/40 border border-blue-800/40 text-blue-300 hover:bg-blue-900/50 transition-colors"
-              >
-                🌐 COT Report
-              </button>
-            </div>
-
-            {/* Chat Body */}
-            <div className="flex-1 p-4 overflow-y-auto space-y-4">
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`flex gap-3 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  {msg.sender === 'ai' && (
-                    <div className="w-8 h-8 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center shrink-0 text-blue-400">
-                      <Bot className="w-4 h-4" />
-                    </div>
-                  )}
-
-                  <div
-                    className={`p-3.5 rounded-2xl text-xs leading-relaxed max-w-[80%] ${
-                      msg.sender === 'user'
-                        ? 'bg-blue-600 text-white rounded-tr-none shadow-md'
-                        : 'bg-[#0F1623] border border-blue-900/30 text-slate-200 rounded-tl-none'
-                    }`}
-                  >
-                    {msg.text}
-                  </div>
-                </div>
+      {/* Recent Executions Table */}
+      <div className="bg-[#0B0F17] border border-slate-800 rounded-xl p-5 space-y-4">
+        <h2 className="text-base font-semibold text-white">Recent Journal Entries</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm text-slate-300">
+            <thead className="text-xs text-slate-400 uppercase bg-[#070A10] border-b border-slate-800">
+              <tr>
+                <th className="py-3 px-4">PAIR</th>
+                <th className="py-3 px-4">LOT</th>
+                <th className="py-3 px-4">SETUP</th>
+                <th className="py-3 px-4">R:R</th>
+                <th className="py-3 px-4">EMOTION</th>
+                <th className="py-3 px-4">OUTCOME</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800/60">
+              {trades.slice(0, 5).map((t, idx) => (
+                <tr key={idx} className="hover:bg-slate-900/40">
+                  <td className="py-3 px-4 font-bold text-white">{t.pair}</td>
+                  <td className="py-3 px-4 font-mono">{t.lot_size}</td>
+                  <td className="py-3 px-4 text-blue-400">{t.setup}</td>
+                  <td className="py-3 px-4 font-semibold">{t.rr}</td>
+                  <td className="py-3 px-4 text-xs text-slate-400">{t.emotion}</td>
+                  <td className="py-3 px-4">
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs font-bold ${
+                        t.outcome === "WIN"
+                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                          : t.outcome === "LOSS"
+                          ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                          : "bg-slate-500/10 text-slate-400 border border-slate-500/20"
+                      }`}
+                    >
+                      {t.outcome}
+                    </span>
+                  </td>
+                </tr>
               ))}
-            </div>
-
-            {/* Drawer Input Footer */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-blue-900/30 bg-[#070A10] flex items-center gap-2">
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Ask Gemini AI anything..."
-                className="flex-1 bg-[#0F1623] border border-blue-900/40 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
-              />
-              <button
-                type="submit"
-                className="p-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white active:scale-95 transition-all cursor-pointer shadow-lg shadow-blue-600/30"
-              >
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
-
-          </div>
+            </tbody>
+          </table>
         </div>
-      )}
-
+      </div>
     </div>
   );
 }
