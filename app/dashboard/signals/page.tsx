@@ -1,573 +1,409 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
-import { sanitizeInput } from '../../../lib/sanitize';
-import { 
-  Radio, 
-  Lock, 
-  Send, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  MinusCircle, 
-  Sparkles, 
-  Trash2, 
-  Filter,
-  Image as ImageIcon,
-  ExternalLink,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  X
-} from 'lucide-react';
-import { toast } from 'sonner';
+import React, { useState } from 'react';
+import { Radio, Send, Filter, Image as ImageIcon, Sparkles, CheckCircle2, XCircle, ShieldAlert, Link as LinkIcon, ExternalLink, X } from 'lucide-react';
+import { useDashboardData } from '@/hooks/useDashboardData';
+
+interface Signal {
+  id: string;
+  pair: string;
+  executionType: string;
+  entryPrice: string;
+  stopLoss: string;
+  takeProfit: string;
+  note: string;
+  chartUrl?: string;
+  timestamp: string;
+  status: 'Active' | 'Closed';
+  outcome?: 'TP HIT' | 'SL HIT' | 'BREAK EVEN';
+}
 
 export default function SignalsPage() {
-  const [isAdmin, setIsAdmin] = useState(true);
-  const [signals, setSignals] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'ALL' | 'ACTIVE' | 'CLOSED'>('ALL');
+  // Production me auth session se admin status verify hoga
+  const [isAdmin] = useState(true); 
 
   // Form States
   const [pair, setPair] = useState('XAUUSD');
-  const [type, setType] = useState('BUY MARKET');
-  const [entry, setEntry] = useState('');
-  const [sl, setSl] = useState('');
-  const [tp1, setTp1] = useState('');
-  const [tp2, setTp2] = useState('');
-  const [notes, setNotes] = useState('');
-
-  // TradingView Chart States
+  const [executionType, setExecutionType] = useState('BUY MARKET');
+  const [entryPrice, setEntryPrice] = useState('2500.00');
+  const [stopLoss, setStopLoss] = useState('2490.00');
+  const [takeProfit, setTakeProfit] = useState('2515.00');
+  const [note, setNote] = useState('');
+  
+  // TradingView Modal & Chart URL State
   const [chartUrl, setChartUrl] = useState('');
-  const [showChartInput, setShowChartInput] = useState(false);
+  const [isChartModalOpen, setIsChartModalOpen] = useState(false);
 
-  // Zoom Image Viewer States
-  const [selectedChart, setSelectedChart] = useState<string | null>(null);
-  const [zoomLevel, setZoomLevel] = useState(1);
+  // Signals State
+  const [signals, setSignals] = useState<Signal[]>([]);
+  const [activeFilter, setActiveFilter] = useState<'All' | 'Active' | 'Closed'>('All');
 
-  const fetchSignals = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('signals')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Fetch Error:', error);
-      toast.error('Failed to load signals from Supabase');
-    } else if (data) {
-      setSignals(data);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchSignals();
-
-    // Realtime Subscription
-    const channel = supabase
-      .channel('realtime_signals')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'signals' },
-        (payload) => {
-          setSignals((prev) => [payload.new, ...prev]);
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'signals' },
-        (payload) => {
-          setSignals((prev) =>
-            prev.map((s) => (s.id === payload.new.id ? payload.new : s))
-          );
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'signals' },
-        (payload) => {
-          setSignals((prev) => prev.filter((s) => s.id !== payload.old.id));
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const handlePostSignal = async (e: React.FormEvent) => {
+  const handleBroadcast = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!entry || !sl) {
-      toast.error('Please enter Entry Price and Stop Loss');
-      return;
-    }
+    if (!pair || !entryPrice) return;
 
-    setSubmitting(true);
+    const newSignal: Signal = {
+      id: Date.now().toString(),
+      pair,
+      executionType,
+      entryPrice,
+      stopLoss,
+      takeProfit,
+      note,
+      chartUrl: chartUrl.trim() ? chartUrl.trim() : undefined,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: 'Active',
+    };
 
-    try {
-      const sanitizedData = {
-        pair: sanitizeInput(pair),
-        type: sanitizeInput(type),
-        entry_price: parseFloat(sanitizeInput(entry)),
-        stop_loss: parseFloat(sanitizeInput(sl)),
-        take_profit: tp1 ? parseFloat(sanitizeInput(tp1)) : null,
-        status: 'ACTIVE',
-        notes: sanitizeInput(notes),
-        chart_url: chartUrl.trim() ? chartUrl.trim() : null,
-      };
-
-      const { data, error } = await supabase
-        .from('signals')
-        .insert([sanitizedData])
-        .select();
-
-      if (error) {
-        console.error('Supabase Insert Error:', error);
-        toast.error(`Database Error: ${error.message}`);
-      } else if (data && data.length > 0) {
-        setEntry('');
-        setSl('');
-        setTp1('');
-        setTp2('');
-        setNotes('');
-        setChartUrl('');
-        setShowChartInput(false);
-        toast.success('Signal Broadcasted Successfully! 🚀');
-      }
-    } catch (err: any) {
-      console.error('Catch Error:', err);
-      toast.error('An unexpected error occurred');
-    } finally {
-      setSubmitting(false);
-    }
+    setSignals([newSignal, ...signals]);
+    setNote('');
+    setChartUrl('');
   };
 
-  const handleUpdateStatus = async (id: number, newStatus: string) => {
-    const { error } = await supabase
-      .from('signals')
-      .update({ status: newStatus })
-      .eq('id', id);
+  // Admin Actions Handler (TP, SL, BE)
+  const handleSignalAction = (id: string, action: 'TP' | 'SL' | 'BE') => {
+    setSignals((prev) =>
+      prev.map((sig) => {
+        if (sig.id !== id) return sig;
 
-    if (error) {
-      toast.error('Failed to update status');
-    } else {
-      toast.success(`Status updated to ${newStatus}`);
-    }
+        if (action === 'TP') {
+          return { ...sig, status: 'Closed', outcome: 'TP HIT' };
+        } else if (action === 'SL') {
+          return { ...sig, status: 'Closed', outcome: 'SL HIT' };
+        } else if (action === 'BE') {
+          return { ...sig, outcome: 'BREAK EVEN', stopLoss: sig.entryPrice };
+        }
+        return sig;
+      })
+    );
   };
 
-  const handleDeleteSignal = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this signal?')) return;
-
-    const { error } = await supabase
-      .from('signals')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast.error(`Delete failed: ${error.message}`);
-    } else {
-      setSignals((prev) => prev.filter((s) => s.id !== id));
-      toast.success('Signal deleted successfully');
-    }
-  };
-
-  // Zoom Handlers
-  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.3, 3));
-  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.3, 0.5));
-  const handleResetZoom = () => setZoomLevel(1);
-
-  // Filter signals according to selected tab
-  const filteredSignals = signals.filter((s) => {
-    if (activeTab === 'ACTIVE') return s.status === 'ACTIVE';
-    if (activeTab === 'CLOSED') return s.status !== 'ACTIVE';
+  const filteredSignals = signals.filter((signal) => {
+    if (activeFilter === 'Active') return signal.status === 'Active';
+    if (activeFilter === 'Closed') return signal.status === 'Closed';
     return true;
   });
 
-  const activeCount = signals.filter((s) => s.status === 'ACTIVE').length;
-  const closedCount = signals.filter((s) => s.status !== 'ACTIVE').length;
-
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="border-b border-blue-900/30 pb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-extrabold text-slate-100 tracking-tight flex items-center gap-3">
-            <Radio className="w-8 h-8 text-rose-500 animate-pulse" /> Live VIP Signals & Broadcast
-          </h2>
-          <p className="text-slate-400 text-sm mt-1">
+    <div className="min-h-screen bg-black text-slate-200 p-6 space-y-6 w-full font-sans">
+      {/* Top Header Title Section */}
+      <div className="flex justify-between items-center">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <Radio className="w-6 h-6 text-emerald-500 animate-pulse" />
+            <h1 className="text-2xl font-bold tracking-tight text-white">Live VIP Signals & Broadcast</h1>
+          </div>
+          <p className="text-xs text-neutral-400 font-medium">
             Read-only institutional signal channel (Broadcasted exclusively by Admin)
           </p>
         </div>
-
-        <button
-          onClick={() => setIsAdmin(!isAdmin)}
-          className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all flex items-center gap-2 ${
-            isAdmin
-              ? 'bg-rose-500/10 border-rose-500/40 text-rose-400'
-              : 'bg-blue-600/10 border-blue-500/40 text-blue-400'
-          }`}
-        >
-          <Lock className="w-3.5 h-3.5" />
-          {isAdmin ? 'Admin Mode Active' : 'User Mode (Read Only)'}
-        </button>
       </div>
 
-      {/* Admin Broadcaster Box */}
+      {/* Broadcast Form Panel (Visible Only To Admin) */}
       {isAdmin && (
-        <form onSubmit={handlePostSignal} className="bg-[#0B0F17] border border-rose-500/30 rounded-2xl p-6 shadow-2xl space-y-4">
-          <div className="flex items-center justify-between border-b border-blue-900/40 pb-3">
-            <h3 className="text-base font-bold text-rose-400 flex items-center gap-2">
-              <Send className="w-4 h-4" /> Broadcast Trade Setup
-            </h3>
-            <span className="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 font-mono px-2.5 py-1 rounded-md font-bold uppercase">
-              Admin Verified Terminal
+        <div className="bg-[#0D0D11] border border-neutral-800/80 rounded-2xl p-5 shadow-2xl relative overflow-hidden">
+          <div className="flex items-center justify-between pb-4 border-b border-neutral-800/60 mb-5">
+            <div className="flex items-center gap-2 text-emerald-500 text-xs font-semibold tracking-wider uppercase">
+              <Send className="w-4 h-4" />
+              <span>Broadcast Trade Setup</span>
+            </div>
+            <span className="text-[10px] font-mono bg-neutral-900 border border-neutral-800 text-neutral-400 px-2.5 py-1 rounded-md uppercase tracking-wider">
+              ADMIN VERIFIED TERMINAL
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-            <div>
-              <label className="block text-xs uppercase font-semibold text-slate-400 mb-1">Pair</label>
-              <input
-                type="text"
-                value={pair}
-                onChange={(e) => setPair(e.target.value)}
-                required
-                className="w-full bg-[#070A10] border border-blue-900/40 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-rose-500"
-              />
+          <form onSubmit={handleBroadcast} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+              <div>
+                <label className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 mb-1.5 block">PAIR</label>
+                <input
+                  type="text"
+                  value={pair}
+                  onChange={(e) => setPair(e.target.value)}
+                  className="w-full bg-[#121218] border border-neutral-800 focus:border-emerald-500 text-white rounded-xl px-3 py-2 text-xs font-mono outline-none transition-colors"
+                  placeholder="e.g. XAUUSD"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 mb-1.5 block">EXECUTION TYPE</label>
+                <select
+                  value={executionType}
+                  onChange={(e) => setExecutionType(e.target.value)}
+                  className="w-full bg-[#121218] border border-neutral-800 focus:border-emerald-500 text-white rounded-xl px-3 py-2 text-xs font-mono outline-none transition-colors cursor-pointer"
+                >
+                  <option value="BUY MARKET">BUY MARKET</option>
+                  <option value="SELL MARKET">SELL MARKET</option>
+                  <option value="BUY LIMIT">BUY LIMIT</option>
+                  <option value="SELL LIMIT">SELL LIMIT</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 mb-1.5 block">ENTRY PRICE</label>
+                <input
+                  type="text"
+                  value={entryPrice}
+                  onChange={(e) => setEntryPrice(e.target.value)}
+                  className="w-full bg-[#121218] border border-neutral-800 focus:border-emerald-500 text-white rounded-xl px-3 py-2 text-xs font-mono outline-none transition-colors"
+                  placeholder="2500.00"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 mb-1.5 block">STOP LOSS (SL)</label>
+                <input
+                  type="text"
+                  value={stopLoss}
+                  onChange={(e) => setStopLoss(e.target.value)}
+                  className="w-full bg-[#121218] border border-neutral-800 focus:border-emerald-500 text-white rounded-xl px-3 py-2 text-xs font-mono outline-none transition-colors"
+                  placeholder="2490.00"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] uppercase font-mono tracking-wider text-neutral-400 mb-1.5 block">TAKE PROFIT TARGET</label>
+                <input
+                  type="text"
+                  value={takeProfit}
+                  onChange={(e) => setTakeProfit(e.target.value)}
+                  className="w-full bg-[#121218] border border-neutral-800 focus:border-emerald-500 text-white rounded-xl px-3 py-2 text-xs font-mono outline-none transition-colors"
+                  placeholder="2515.00"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs uppercase font-semibold text-slate-400 mb-1">Execution Type</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full bg-[#070A10] border border-blue-900/40 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-rose-500"
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+              <input
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Confluences / Execution note..."
+                className="flex-1 w-full bg-[#121218] border border-neutral-800 focus:border-emerald-500 text-white rounded-xl px-3.5 py-2.5 text-xs outline-none transition-colors"
+              />
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setIsChartModalOpen(true)}
+                  className={`flex items-center gap-2 bg-[#16161F] hover:bg-neutral-800 border ${
+                    chartUrl ? 'border-emerald-500 text-emerald-400' : 'border-neutral-800 text-neutral-300'
+                  } px-3.5 py-2.5 rounded-xl text-xs font-medium transition-colors cursor-pointer shrink-0`}
+                >
+                  <ImageIcon className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>{chartUrl ? 'Chart Attached ✓' : 'Add TradingView Chart'}</span>
+                </button>
+
+                <button
+                  type="submit"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-6 py-2.5 rounded-xl text-xs transition-colors cursor-pointer shadow-lg shadow-emerald-950/50 shrink-0"
+                >
+                  <span>Broadcast Signal</span>
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* TradingView Chart Input Modal */}
+      {isChartModalOpen && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-[#0D0D11] border border-neutral-800 rounded-2xl p-5 max-w-md w-full space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+              <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+                <LinkIcon className="w-4 h-4" />
+                <span>Attach TradingView Chart Link</span>
+              </div>
+              <button
+                onClick={() => setIsChartModalOpen(false)}
+                className="text-neutral-400 hover:text-white p-1 rounded-lg transition-colors"
               >
-                <option value="BUY MARKET">BUY MARKET</option>
-                <option value="SELL MARKET">SELL MARKET</option>
-                <option value="BUY LIMIT">BUY LIMIT</option>
-                <option value="SELL LIMIT">SELL LIMIT</option>
-              </select>
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <div>
-              <label className="block text-xs uppercase font-semibold text-slate-400 mb-1">Entry Price</label>
-              <input
-                type="text"
-                value={entry}
-                onChange={(e) => setEntry(e.target.value)}
-                required
-                placeholder="2500.00"
-                className="w-full bg-[#070A10] border border-blue-900/40 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-rose-500 font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs uppercase font-semibold text-slate-400 mb-1">Stop Loss (SL)</label>
-              <input
-                type="text"
-                value={sl}
-                onChange={(e) => setSl(e.target.value)}
-                required
-                placeholder="2490.00"
-                className="w-full bg-[#070A10] border border-blue-900/40 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-rose-500 font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs uppercase font-semibold text-slate-400 mb-1">Take Profit Target</label>
-              <input
-                type="text"
-                value={tp1}
-                onChange={(e) => setTp1(e.target.value)}
-                placeholder="2515.00"
-                className="w-full bg-[#070A10] border border-blue-900/40 rounded-xl px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-rose-500 font-mono"
-              />
-            </div>
-          </div>
-
-          {/* Conditional TradingView Screenshot URL Field */}
-          {showChartInput && (
-            <div className="flex items-center gap-2 bg-[#070A10] border border-blue-900/40 rounded-xl px-3 py-2">
-              <ImageIcon className="w-4 h-4 text-rose-400 shrink-0" />
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono text-neutral-400 uppercase block">TradingView Image / Snapshot URL</label>
               <input
                 type="url"
                 value={chartUrl}
                 onChange={(e) => setChartUrl(e.target.value)}
-                placeholder="Paste TradingView Chart Screenshot URL (e.g. https://s3.tradingview.com/snapshots/...)..."
-                className="w-full bg-transparent text-xs text-slate-200 font-mono focus:outline-none"
+                placeholder="https://www.tradingview.com/x/..."
+                className="w-full bg-[#121218] border border-neutral-800 focus:border-emerald-500 text-white rounded-xl px-3.5 py-2.5 text-xs font-mono outline-none transition-colors"
               />
             </div>
-          )}
 
-          <div className="flex flex-col sm:flex-row gap-4">
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Confluences / Execution note..."
-              className="flex-1 bg-[#070A10] border border-blue-900/40 rounded-xl px-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-rose-500"
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowChartInput(!showChartInput)}
-              className="px-3 py-2 bg-[#070A10] border border-blue-900/40 hover:border-rose-500 text-xs text-slate-300 font-mono rounded-xl flex items-center justify-center gap-1.5 transition-all whitespace-nowrap"
-            >
-              <ImageIcon className="w-4 h-4 text-rose-400" />
-              {showChartInput ? 'Remove Chart' : 'Add TradingView Chart'}
-            </button>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="px-6 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-rose-600/20 disabled:opacity-50 whitespace-nowrap"
-            >
-              {submitting ? 'Broadcasting...' : 'Broadcast Signal'}
-            </button>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsChartModalOpen(false)}
+                className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 px-4 py-2 rounded-xl text-xs font-mono transition-colors"
+              >
+                Done
+              </button>
+            </div>
           </div>
-        </form>
+        </div>
       )}
 
-      {/* Filter Tabs */}
-      <div className="flex items-center justify-between border-b border-blue-900/30 pb-3">
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <span className="text-xs font-bold uppercase text-slate-400">Filter Signals:</span>
+      {/* Filter Tabs Bar */}
+      <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center gap-2 text-xs font-mono text-neutral-400 uppercase tracking-wider">
+          <Filter className="w-3.5 h-3.5" />
+          <span>FILTER SIGNALS:</span>
         </div>
 
-        <div className="flex items-center gap-2 bg-[#0B0F17] p-1 rounded-xl border border-blue-900/30 text-xs">
-          <button
-            onClick={() => setActiveTab('ALL')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              activeTab === 'ALL'
-                ? 'bg-blue-600 text-white'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            All ({signals.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('ACTIVE')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              activeTab === 'ACTIVE'
-                ? 'bg-emerald-600 text-white'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Active ({activeCount})
-          </button>
-          <button
-            onClick={() => setActiveTab('CLOSED')}
-            className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
-              activeTab === 'CLOSED'
-                ? 'bg-rose-600 text-white'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            Closed ({closedCount})
-          </button>
+        <div className="flex items-center gap-1 bg-[#0D0D11] p-1 rounded-xl border border-neutral-800/80">
+          {(['All', 'Active', 'Closed'] as const).map((filter) => {
+            const count =
+              filter === 'All'
+                ? signals.length
+                : signals.filter((s) => s.status === filter).length;
+
+            return (
+              <button
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                className={`px-3 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer ${
+                  activeFilter === filter
+                    ? 'bg-blue-600 text-white font-semibold shadow-md'
+                    : 'text-neutral-400 hover:text-white hover:bg-neutral-900'
+                }`}
+              >
+                {filter} ({count})
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* Broadcast Feed */}
-      <div className="space-y-4">
-        {loading ? (
-          <div className="space-y-4">
-            {[1, 2].map((i) => (
-              <div key={i} className="bg-[#0B0F17] border border-blue-900/30 rounded-2xl p-6 h-40 animate-pulse flex flex-col justify-between">
-                <div className="h-6 bg-blue-900/30 rounded w-1/4"></div>
-                <div className="h-12 bg-blue-900/20 rounded w-full"></div>
-                <div className="h-4 bg-blue-900/30 rounded w-1/2"></div>
-              </div>
-            ))}
+      {/* Signals Display Feed Container */}
+      {filteredSignals.length === 0 ? (
+        <div className="bg-[#07070A] border border-neutral-800/80 rounded-2xl p-16 flex flex-col items-center justify-center text-center space-y-3 min-h-[320px]">
+          <div className="w-12 h-12 rounded-2xl bg-neutral-900/80 border border-neutral-800 flex items-center justify-center text-blue-400">
+            <Sparkles className="w-6 h-6" />
           </div>
-        ) : filteredSignals.length === 0 ? (
-          <div className="bg-[#0B0F17] border border-blue-900/30 rounded-2xl p-12 text-center space-y-3">
-            <Sparkles className="w-10 h-10 text-blue-500/50 mx-auto animate-bounce" />
-            <h3 className="text-lg font-bold text-slate-300">No {activeTab !== 'ALL' ? activeTab : ''} Signals Found</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Waiting for high-probability setups or adjust your active tab filter above.
-            </p>
-          </div>
-        ) : (
-          filteredSignals.map((s) => (
+          <h3 className="text-base font-semibold text-white">No Signals Found</h3>
+          <p className="text-xs text-neutral-500 max-w-sm">
+            Waiting for high-probability setups or adjust your active tab filter above.
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredSignals.map((signal) => (
             <div
-              key={s.id}
-              className="bg-[#0B0F17] border border-blue-900/30 rounded-2xl p-6 shadow-xl space-y-4"
+              key={signal.id}
+              className="bg-[#0D0D11] border border-neutral-800/80 hover:border-neutral-700 rounded-2xl p-5 transition-all space-y-4"
             >
-              <div className="flex items-center justify-between border-b border-blue-900/30 pb-3">
+              <div className="flex items-center justify-between border-b border-neutral-800/50 pb-3">
                 <div className="flex items-center gap-3">
-                  <span className="text-lg font-black text-slate-100">{s.pair}</span>
+                  <span className="text-base font-bold font-mono text-white">{signal.pair}</span>
                   <span
-                    className={`px-3 py-1 rounded-md text-xs font-bold ${
-                      s.type?.includes('BUY')
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                        : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'
+                    className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold ${
+                      signal.executionType.includes('BUY')
+                        ? 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/50'
+                        : 'bg-rose-950/60 text-rose-400 border border-rose-800/50'
                     }`}
                   >
-                    {s.type}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3 text-xs font-mono">
-                  <span className="flex items-center gap-1 text-slate-500">
-                    <Clock className="w-3.5 h-3.5" /> {new Date(s.created_at).toLocaleTimeString()}
-                  </span>
-                  <span
-                    className={`px-2.5 py-1 rounded-md font-bold ${
-                      s.status?.includes('TP')
-                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                        : s.status?.includes('SL')
-                        ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
-                        : 'bg-blue-600/10 text-blue-400 border border-blue-500/30'
-                    }`}
-                  >
-                    {s.status}
+                    {signal.executionType}
                   </span>
 
-                  {isAdmin && (
-                    <button
-                      onClick={() => handleDeleteSignal(s.id)}
-                      className="p-1.5 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 rounded-lg transition-all ml-1"
-                      title="Delete Signal"
+                  {signal.outcome && (
+                    <span
+                      className={`px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold uppercase ${
+                        signal.outcome === 'TP HIT'
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                          : signal.outcome === 'SL HIT'
+                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                          : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                      }`}
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      {signal.outcome}
+                    </span>
                   )}
                 </div>
+
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-mono text-neutral-500">{signal.timestamp}</span>
+                  <span
+                    className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-semibold uppercase ${
+                      signal.status === 'Active'
+                        ? 'bg-blue-950 text-blue-400 border border-blue-800/40'
+                        : 'bg-neutral-800 text-neutral-400'
+                    }`}
+                  >
+                    {signal.status}
+                  </span>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-[#070A10] p-4 rounded-xl border border-blue-900/30 font-mono text-xs">
-                <div>
-                  <span className="text-slate-500 block">Entry Level:</span>
-                  <span className="text-slate-200 font-bold text-sm">{s.entry_price ?? '-'}</span>
+              <div className="grid grid-cols-3 gap-4 font-mono text-xs">
+                <div className="bg-[#121218] p-2.5 rounded-xl border border-neutral-800/50">
+                  <span className="text-[10px] text-neutral-500 block">ENTRY PRICE</span>
+                  <span className="text-white font-bold">{signal.entryPrice}</span>
                 </div>
-                <div>
-                  <span className="text-slate-500 block">Stop Loss (SL):</span>
-                  <span className="text-rose-400 font-bold text-sm">{s.stop_loss ?? '-'}</span>
+                <div className="bg-[#121218] p-2.5 rounded-xl border border-neutral-800/50">
+                  <span className="text-[10px] text-rose-400 block">STOP LOSS</span>
+                  <span className="text-rose-300 font-bold">{signal.stopLoss}</span>
                 </div>
-                <div>
-                  <span className="text-slate-500 block">Take Profit (TP):</span>
-                  <span className="text-emerald-400 font-bold text-sm">{s.take_profit ?? '-'}</span>
+                <div className="bg-[#121218] p-2.5 rounded-xl border border-neutral-800/50">
+                  <span className="text-[10px] text-emerald-400 block">TAKE PROFIT</span>
+                  <span className="text-emerald-300 font-bold">{signal.takeProfit}</span>
                 </div>
               </div>
 
-              {s.notes && (
-                <p className="text-xs text-slate-300 italic bg-[#070A10]/50 p-3 rounded-lg border border-blue-900/20">
-                  "{s.notes}"
+              {signal.note && (
+                <p className="text-xs text-neutral-400 bg-[#121218]/50 p-2.5 rounded-xl border border-neutral-800/30 font-sans">
+                  <span className="text-neutral-500 font-semibold mr-1">Note:</span> {signal.note}
                 </p>
               )}
 
-              {/* TradingView Screenshot Image Rendering */}
-              {s.chart_url && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-                    <span className="flex items-center gap-1.5">
-                      <ImageIcon className="w-3.5 h-3.5 text-rose-400" /> TradingView Analysis Chart:
-                    </span>
-                    <a
-                      href={s.chart_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-rose-400 hover:underline flex items-center gap-1"
-                    >
-                      Open Link <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </div>
-                  <div 
-                    onClick={() => {
-                      setSelectedChart(s.chart_url);
-                      setZoomLevel(1);
-                    }}
-                    className="relative group rounded-xl overflow-hidden border border-blue-900/40 bg-[#070A10] cursor-pointer"
-                  >
-                    <img
-                      src={s.chart_url}
-                      alt="TradingView Chart Setup"
-                      className="w-full max-h-96 object-contain transition-transform duration-300 group-hover:scale-[1.01]"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-xs font-mono text-white gap-2 font-bold">
-                      <ZoomIn className="w-4 h-4 text-rose-400" /> Click to Zoom Chart
-                    </div>
-                  </div>
-                </div>
+              {/* TradingView Chart Button on Signal Card */}
+              {signal.chartUrl && (
+                <a
+                  href={signal.chartUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-[#121218] hover:bg-neutral-800 border border-neutral-800 text-emerald-400 px-3 py-1.5 rounded-xl text-xs font-mono transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>View TradingView Chart Setup</span>
+                </a>
               )}
 
-              {isAdmin && (
-                <div className="pt-2 border-t border-blue-900/20 flex flex-wrap items-center gap-2 text-xs">
-                  <span className="text-slate-500 text-[10px] uppercase font-bold mr-2">Quick Update Status:</span>
+              {/* Admin Action Buttons (TP, SL, BE Controls) */}
+              {isAdmin && signal.status === 'Active' && (
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-800/40">
+                  <span className="text-[10px] font-mono text-neutral-500 mr-auto uppercase">Admin Actions:</span>
+
                   <button
-                    onClick={() => handleUpdateStatus(s.id, 'HIT TP 🎯')}
-                    className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-lg hover:bg-emerald-500/20 flex items-center gap-1 font-bold transition-all text-[11px]"
+                    onClick={() => handleSignalAction(signal.id, 'BE')}
+                    className="flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs px-3 py-1.5 rounded-lg font-mono transition-all cursor-pointer"
                   >
-                    <CheckCircle2 className="w-3 h-3" /> Hit TP
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    <span>Set BE</span>
                   </button>
+
                   <button
-                    onClick={() => handleUpdateStatus(s.id, 'HIT SL ❌')}
-                    className="px-2.5 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-400 rounded-lg hover:bg-rose-500/20 flex items-center gap-1 font-bold transition-all text-[11px]"
+                    onClick={() => handleSignalAction(signal.id, 'SL')}
+                    className="flex items-center gap-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 text-xs px-3 py-1.5 rounded-lg font-mono transition-all cursor-pointer"
                   >
-                    <XCircle className="w-3 h-3" /> Hit SL
+                    <XCircle className="w-3.5 h-3.5" />
+                    <span>SL Hit</span>
                   </button>
+
                   <button
-                    onClick={() => handleUpdateStatus(s.id, 'CLOSED @ BE ⚖️')}
-                    className="px-2.5 py-1 bg-blue-500/10 border border-blue-500/30 text-blue-400 rounded-lg hover:bg-blue-500/20 flex items-center gap-1 font-bold transition-all text-[11px]"
+                    onClick={() => handleSignalAction(signal.id, 'TP')}
+                    className="flex items-center gap-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs px-3 py-1.5 rounded-lg font-mono transition-all cursor-pointer"
                   >
-                    <MinusCircle className="w-3 h-3" /> Close BE
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>TP Hit</span>
                   </button>
                 </div>
               )}
             </div>
-          ))
-        )}
-      </div>
-
-      {/* Lightbox Modal with Interactive Zoom Controls */}
-      {selectedChart && (
-        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
-          <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
-            <button
-              onClick={handleZoomIn}
-              className="p-2 bg-slate-800/80 hover:bg-slate-700 text-white rounded-xl border border-slate-600 transition-all"
-              title="Zoom In"
-            >
-              <ZoomIn className="w-5 h-5" />
-            </button>
-            <button
-              onClick={handleZoomOut}
-              className="p-2 bg-slate-800/80 hover:bg-slate-700 text-white rounded-xl border border-slate-600 transition-all"
-              title="Zoom Out"
-            >
-              <ZoomOut className="w-5 h-5" />
-            </button>
-            <button
-              onClick={handleResetZoom}
-              className="p-2 bg-slate-800/80 hover:bg-slate-700 text-white rounded-xl border border-slate-600 transition-all"
-              title="Reset Zoom"
-            >
-              <RotateCcw className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setSelectedChart(null)}
-              className="p-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl transition-all"
-              title="Close"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="w-full h-full overflow-auto flex items-center justify-center p-8">
-            <img
-              src={selectedChart}
-              alt="Zoomed Chart"
-              style={{ transform: `scale(${zoomLevel})` }}
-              className="max-w-full max-h-full object-contain transition-transform duration-200 ease-out"
-            />
-          </div>
+          ))}
         </div>
       )}
     </div>

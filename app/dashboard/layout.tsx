@@ -1,179 +1,102 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { 
   LayoutDashboard, 
-  BookOpen, 
   BarChart2, 
-  Brain, 
-  Globe, 
-  TrendingUp, 
+  BookOpen, 
+  LineChart, 
   Radio, 
-  MessageSquare, 
+  Layers, 
+  Users, 
   Settings, 
-  PanelLeftOpen, 
+  ChevronRight,
+  Menu,
   X,
-  ShieldCheck,
-  Send
-} from 'lucide-react';
+  Newspaper,
+  FlaskConical
+} from "lucide-react";
 
-const navItems = [
-  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Journal', href: '/dashboard/journal', icon: BookOpen },
-  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart2 },
-  { name: 'Psychology', href: '/dashboard/psychology', icon: Brain },
-  { name: 'Fundamentals', href: '/dashboard/fundamentals', icon: Globe },
-  { name: 'Strategy', href: '/dashboard/strategy', icon: TrendingUp },
-  { name: 'VIP Signals', href: '/dashboard/signals', icon: Radio },
-  { name: 'Community', href: '/dashboard/community', icon: MessageSquare },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+const navTabs = [
+  { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Journal", href: "/dashboard/journal", icon: BookOpen },
+  { name: "Analytics", href: "/dashboard/analytics", icon: BarChart2 },
+  { name: "Live Chart", href: "/dashboard/chart", icon: LineChart },
+  { name: "Signals", href: "/dashboard/signals", icon: Radio },
+  { name: "Community", href: "/dashboard/community", icon: Users },
+  { name: "Strategy", href: "/dashboard/strategy", icon: Layers },
+  { name: "News", href: "/dashboard/news", icon: Newspaper },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#070A10] text-slate-100 flex flex-col md:flex-row relative">
-      
-      {/* Mobile Top Header Bar */}
-      <div className="md:hidden flex items-center justify-between px-4 py-3 bg-[#0B0F17] border-b border-blue-900/30 w-full sticky top-0 z-40 select-none">
-        <div className="flex items-center gap-3">
-          <button 
-            type="button"
-            onClick={() => setIsDrawerOpen(true)}
-            className="p-2.5 rounded-xl bg-blue-950 border border-blue-900/60 text-blue-400 hover:text-white active:bg-blue-900 transition-colors cursor-pointer outline-none"
-            aria-label="Open Sidebar Menu"
+    <div className="flex h-screen w-screen bg-black text-slate-200 overflow-hidden font-sans">
+      {/* Collapsible Drawer Sidebar */}
+      <aside
+        className={`bg-[#0A0A0A] border-r border-neutral-800 flex flex-col justify-between transition-all duration-300 z-50 shrink-0 h-full ${
+          isExpanded ? "w-60" : "w-16"
+        }`}
+      >
+        <div className="p-3 space-y-6">
+          <div className="flex items-center justify-between">
+            <button 
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="w-10 h-10 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center hover:border-neutral-700 transition-colors text-white"
+            >
+              {isExpanded ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+
+            {isExpanded && (
+              <span className="text-xs font-bold font-mono tracking-widest text-neutral-400 pr-2 uppercase">
+                VALT SYS
+              </span>
+            )}
+          </div>
+
+          <nav className="space-y-1.5">
+            {navTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = pathname === tab.href;
+
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  className={`flex items-center gap-3.5 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                    isActive
+                      ? "bg-neutral-800 text-white border border-neutral-700 shadow-md"
+                      : "text-neutral-400 hover:text-white hover:bg-neutral-900"
+                  }`}
+                  title={!isExpanded ? tab.name : ""}
+                >
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-emerald-400" : "text-neutral-400"}`} />
+                  {isExpanded && <span className="truncate tracking-wide">{tab.name}</span>}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        <div className="p-3 border-t border-neutral-800">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full flex items-center justify-center p-2 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-neutral-400 transition-colors"
           >
-            <PanelLeftOpen className="w-5 h-5" />
+            <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
           </button>
-          <span className="font-black text-base tracking-wider text-blue-500">
-            INSTITUTIONAL<span className="text-slate-100">.FX</span>
-          </span>
-        </div>
-      </div>
-
-      {/* Mobile Sliding Navigation Drawer */}
-      {isDrawerOpen && (
-        <div className="fixed inset-0 z-[10000] md:hidden flex">
-          {/* Backdrop Overlay */}
-          <div 
-            onClick={() => setIsDrawerOpen(false)}
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
-          />
-          
-          {/* Drawer Sidebar */}
-          <aside className="relative w-72 bg-[#0B0F17] border-r border-blue-900/40 h-full flex flex-col justify-between shadow-2xl z-[10001] select-none">
-            {/* Drawer Header */}
-            <div className="p-4 border-b border-blue-900/30 flex items-center justify-between bg-[#070A10]">
-              <h1 className="font-black text-lg tracking-wider text-blue-500">
-                INSTITUTIONAL<span className="text-slate-100">.FX</span>
-              </h1>
-              <button 
-                type="button"
-                onClick={() => setIsDrawerOpen(false)}
-                className="p-2 rounded-xl bg-blue-950/60 border border-blue-900/60 text-slate-400 hover:text-white active:bg-blue-900 cursor-pointer outline-none"
-                aria-label="Close Drawer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Navigation Items */}
-            <div className="px-3 py-4 space-y-1 flex-1 overflow-y-auto">
-              <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-wider text-slate-500">Navigation Menu</p>
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setIsDrawerOpen(false)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
-                      isActive
-                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-blue-950/40'
-                    }`}
-                  >
-                    <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-blue-400'}`} />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </div>
-
-            {/* Status Footer */}
-            <div className="p-4 m-3 bg-[#070A10] border border-blue-900/30 rounded-xl space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Supabase DB
-                </span>
-                <span className="font-mono font-bold text-emerald-400">ONLINE</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 flex items-center gap-1.5">
-                  <Send className="w-3.5 h-3.5 text-sky-400" /> Telegram Bot
-                </span>
-                <span className="font-mono font-bold text-sky-400">ACTIVE</span>
-              </div>
-            </div>
-          </aside>
-        </div>
-      )}
-
-      {/* Desktop Permanent Sidebar */}
-      <aside className="hidden md:flex w-64 bg-[#0B0F17] border-r border-blue-900/30 flex-col justify-between shrink-0 h-screen sticky top-0">
-        <div className="p-6 border-b border-blue-900/30">
-          <h1 className="font-black text-xl tracking-wider text-blue-500">
-            INSTITUTIONAL<span className="text-slate-100">.FX</span>
-          </h1>
-        </div>
-
-        <div className="px-4 py-6 space-y-1.5 flex-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all ${
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-blue-950/20'
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-blue-400'}`} />
-                {item.name}
-              </Link>
-            );
-          })}
-        </div>
-
-        <div className="p-4 m-4 bg-[#070A10] border border-blue-900/30 rounded-xl space-y-2 text-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Supabase DB
-            </span>
-            <span className="font-mono font-bold text-emerald-400">ONLINE</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-slate-400 flex items-center gap-1.5">
-              <Send className="w-3.5 h-3.5 text-sky-400" /> Telegram Bot
-            </span>
-            <span className="font-mono font-bold text-sky-400">ACTIVE</span>
-          </div>
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 p-4 md:p-8 overflow-y-auto max-w-full">
+      {/* Main Dynamic Viewport - Vertical Scroll Enabled */}
+      <main className="flex-1 h-full overflow-y-auto bg-black p-0 w-full">
         {children}
       </main>
-
     </div>
   );
 }

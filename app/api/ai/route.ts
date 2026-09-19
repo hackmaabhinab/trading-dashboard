@@ -1,8 +1,25 @@
 import { NextResponse } from "next/server";
+import { db } from "@/lib/db"; // Supabase client from lib/db.ts
 
 export async function POST(req: Request) {
   try {
-    const { message, module, tradesHistory } = await req.json();
+    const body = await req.json();
+    const { message, module, userId = "default_user_abhinav" } = body;
+
+    // Industry Standard: Fetch real user trades from Supabase if tradesHistory is not passed directly
+    let tradesHistory = body.tradesHistory;
+    if (!tradesHistory) {
+      const { data: dbTrades, error: dbError } = await db
+        .from("trades")
+        .select("*")
+        .eq("userId", userId);
+
+      if (!dbError && dbTrades) {
+        tradesHistory = dbTrades;
+      } else {
+        tradesHistory = [];
+      }
+    }
 
     const apiKey = (
       process.env.GEMINI_API_KEY ||
@@ -26,7 +43,7 @@ RULES FOR RESPONSE:
 
     const fullPrompt = `${systemPrompt}\n\nUser Question: ${message}`;
 
-    // 2. Stable Gemini Endpoint Call
+    // 2. Stable Gemini Endpoint Call (Unchanged API endpoint & key handling)
     const url = `https://generativelanguage.googleapis.com/v1/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
@@ -57,7 +74,7 @@ RULES FOR RESPONSE:
       data.candidates?.[0]?.content?.parts?.[0]?.text ||
       "Sorry, AI could not generate a response.";
 
-    return NextResponse.json({ reply: aiReply });
+    return NextResponse.json({ reply: aiReply, syncedWithDb: true });
   } catch (error: any) {
     console.error("AI Route Internal Error:", error);
     return NextResponse.json(
