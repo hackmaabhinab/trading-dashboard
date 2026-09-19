@@ -34,6 +34,8 @@ const DottedBar = ({ value, max = 100, color = "emerald" }: { value: number; max
   );
 };
 
+export const dynamic = 'force-dynamic';
+
 export default function OverviewPage() {
   const [activeRiskTab, setActiveRiskTab] = useState<"TODAY" | "THIS WEEK">("TODAY");
 
