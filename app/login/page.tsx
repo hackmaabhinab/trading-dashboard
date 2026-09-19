@@ -1,89 +1,67 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
   const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setErrorMsg("");
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      setErrorMsg("Access Denied: Invalid credentials or unauthorized user.");
-      setLoading(false);
-    } else if (data.session) {
-      // Store session token in cookie for middleware route protection
-      document.cookie = `sb-access-token=${data.session.access_token}; path=/; max-age=604800; SameSite=Strict; Secure`;
+    // Simulation for authentication/navigation
+    setTimeout(() => {
       router.push("/dashboard");
-    }
+    }, 1000);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
-      <form
-        onSubmit={handleLogin}
-        className="w-full max-w-md bg-zinc-900 p-8 rounded-xl border border-zinc-800 space-y-4 shadow-2xl"
-      >
-        <div className="text-center space-y-1">
-          <h2 className="text-2xl font-bold text-green-500">Valt Terminal</h2>
-          <p className="text-xs text-zinc-400">Restricted Institutional Access</p>
+    <div className="min-h-screen w-screen bg-black flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-[#0B0B0B] border border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
+        <div className="text-center space-y-2">
+          <h1 className="text-xl font-bold text-emerald-400 tracking-wide font-mono uppercase">
+            Valt Terminal Login
+          </h1>
+          <p className="text-xs text-neutral-500">Restricted Institutional Access</p>
         </div>
 
-        {errorMsg && (
-          <div className="p-3 bg-red-950/50 border border-red-800 rounded text-red-400 text-xs text-center font-medium">
-            {errorMsg}
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label className="block text-xs font-mono text-neutral-400 mb-1">Authorized Email</label>
+            <input 
+              type="email" 
+              required
+              placeholder="trader@valtsys.com"
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition-colors"
+            />
           </div>
-        )}
 
-        <div>
-          <label className="text-xs font-semibold text-zinc-400">Authorized Email</label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="trader@valt.com"
-            className="w-full mt-1 p-2 bg-black border border-zinc-700 rounded focus:border-green-500 outline-none text-white text-sm"
-          />
+          <div>
+            <label className="block text-xs font-mono text-neutral-400 mb-1">Password</label>
+            <input 
+              type="password" 
+              required
+              placeholder="••••••••"
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-500 transition-colors"
+            />
+          </div>
+
+          <button 
+            type="submit"
+            disabled={loading}
+            className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs py-3 rounded-lg transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] active:scale-[0.98] disabled:opacity-50"
+          >
+            {loading ? "Authenticating..." : "Log In"}
+          </button>
+        </form>
+
+        <div className="text-center text-xs text-neutral-500 font-mono">
+          Need an account? <Link href="/signup" className="text-emerald-400 hover:underline">Sign Up</Link>
         </div>
-
-        <div>
-          <label className="text-xs font-semibold text-zinc-400">Password</label>
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full mt-1 p-2 bg-black border border-zinc-700 rounded focus:border-green-500 outline-none text-white text-sm"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-2.5 bg-green-600 hover:bg-green-500 text-black font-bold text-sm rounded transition cursor-pointer disabled:opacity-50"
-        >
-          {loading ? "Authenticating..." : "Authenticate & Launch"}
-        </button>
-
-        <p className="text-[10px] text-center text-zinc-500 pt-2">
-          Unauthorized access attempts are logged and strictly monitored.
-        </p>
-      </form>
+      </div>
     </div>
   );
 }
