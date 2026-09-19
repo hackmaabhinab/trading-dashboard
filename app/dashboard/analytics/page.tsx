@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { Bot, Send, Sparkles, RefreshCw, BarChart2, Brain, Globe } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useDashboardData } from '@/hooks/useDashboardData';
+export const dynamic = 'force-dynamic';
 
 interface Message {
   id: string;
