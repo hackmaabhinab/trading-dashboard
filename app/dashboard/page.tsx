@@ -105,7 +105,7 @@ export default function OverviewPage() {
   }, []);
 
   return (
-    <div className="space-y-4 w-full text-slate-200 bg-black min-h-screen p-2 font-sans">
+    <div className="space-y-4 w-full text-slate-200 bg-black min-h-screen p-2 sm:p-4 font-sans">
       
       {/* 1. TOP KPI STATS BAR */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
@@ -142,7 +142,7 @@ export default function OverviewPage() {
       </div>
 
       {/* 2. CHARTS & AI COACH SECTION */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
         <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">Account Performance</span>
@@ -163,12 +163,12 @@ export default function OverviewPage() {
             <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">Daily PnL</span>
             <span className="text-[10px] font-mono text-neutral-500">AVG: $0.00</span>
           </div>
-          <div className="h-52 bg-black/40 border border-neutral-800/60 rounded-lg flex items-center justify-center text-neutral-600 text-xs font-mono">
+          <div className="h-44 md:h-52 bg-black/40 border border-neutral-800/60 rounded-lg flex items-center justify-center text-neutral-600 text-xs font-mono">
             [ No Executions Recorded ]
           </div>
         </div>
 
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
+        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3 md:col-span-2 lg:col-span-1">
           <div className="flex items-center justify-between border-b border-neutral-800/60 pb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">Cypher Coach</span>
             <Maximize2 className="w-3.5 h-3.5 text-neutral-500" />
@@ -192,7 +192,7 @@ export default function OverviewPage() {
       {/* 3. MONTHLY CALENDAR & RISK HEALTH */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
         <div className="lg:col-span-2 bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">Monthly Calendar</span>
             <div className="flex items-center gap-2 font-mono text-xs">
               <button className="text-neutral-500 hover:text-white"><ChevronsLeft className="w-3.5 h-3.5" /></button>
@@ -204,16 +204,20 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-1.5 text-center font-mono text-[10px]">
-            {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((d) => (
-              <div key={d} className="text-neutral-500 font-bold py-1">{d}</div>
-            ))}
-            
-            {Array.from({ length: 30 }).map((_, idx) => (
-              <div key={idx} className="h-16 bg-neutral-900/20 rounded p-1 text-left text-neutral-600 border border-neutral-800/40">
-                <span>{idx + 1}</span>
+          <div className="overflow-x-auto">
+            <div className="min-w-[500px]">
+              <div className="grid grid-cols-7 gap-1.5 text-center font-mono text-[10px]">
+                {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((d) => (
+                  <div key={d} className="text-neutral-500 font-bold py-1">{d}</div>
+                ))}
+                
+                {Array.from({ length: 30 }).map((_, idx) => (
+                  <div key={idx} className="h-12 sm:h-16 bg-neutral-900/20 rounded p-1 text-left text-neutral-600 border border-neutral-800/40">
+                    <span>{idx + 1}</span>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
           </div>
         </div>
 
@@ -245,7 +249,7 @@ export default function OverviewPage() {
       </div>
 
       {/* 4. OPEN POSITIONS & MFE/MAE */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
         <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">MFE / MAE</span>
@@ -273,7 +277,7 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
+        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3 md:col-span-2 lg:col-span-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300 block border-b border-neutral-800/60 pb-2">Entry Price Range</span>
           <div className="py-8 text-center font-mono text-xs text-neutral-600">
             No Entry Data Recorded
@@ -282,7 +286,7 @@ export default function OverviewPage() {
       </div>
 
       {/* 5. RISK STATUS, PERFORMANCE & HOURLY BREAKDOWN */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
         <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between border-b border-neutral-800/60 pb-2">
             <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">Current Risk Status</span>
@@ -326,7 +330,7 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-2">
+        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-2 md:col-span-2 lg:col-span-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300 block border-b border-neutral-800/60 pb-2">Hourly Breakdown</span>
           <div className="py-8 text-center font-mono text-xs text-neutral-600">
             No Executions Recorded
