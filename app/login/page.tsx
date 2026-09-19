@@ -41,8 +41,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black text-white p-4">
-      <form onSubmit={handleAuth} className="w-full max-w-md bg-zinc-900 p-8 rounded-xl border border-zinc-800 space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
+      <form onSubmit={handleAuth} className="w-full max-w-md bg-zinc-900 p-8 rounded-xl border border-zinc-800 space-y-4 shadow-2xl">
         <h2 className="text-2xl font-bold text-center text-green-500">
           {isSignUp ? "Create Valt Account" : "Valt Terminal Login"}
         </h2>
