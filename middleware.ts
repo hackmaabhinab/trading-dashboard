@@ -2,15 +2,16 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get('sb-access-token');
+  const token = req.cookies.get('sb-access-token')?.value;
   const { pathname } = req.nextUrl;
 
-  // Protect /dashboard and nested routes
+  // Protect all dashboard routes & sub-routes
   if (pathname.startsWith('/dashboard') && !token) {
-    return NextResponse.redirect(new URL('/login', req.url));
+    const loginUrl = new URL('/login', req.url);
+    return NextResponse.redirect(loginUrl);
   }
 
-  // If already logged in, don't allow visiting /login
+  // Prevent logged-in users from seeing login screen again
   if (pathname === '/login' && token) {
     return NextResponse.redirect(new URL('/dashboard', req.url));
   }
