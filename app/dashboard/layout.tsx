@@ -15,8 +15,7 @@ import {
   ChevronRight,
   Menu,
   X,
-  Newspaper,
-  FlaskConical
+  Newspaper
 } from "lucide-react";
 
 const navTabs = [
@@ -34,12 +33,81 @@ const navTabs = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex h-screen w-screen bg-black text-slate-200 overflow-hidden font-sans">
-      {/* Collapsible Drawer Sidebar */}
+    <div className="flex flex-col md:flex-row h-screen w-screen bg-black text-slate-200 overflow-hidden font-sans">
+      
+      {/* 1. MOBILE TOP HEADER (Shown ONLY on mobile screens) */}
+      <header className="md:hidden flex items-center justify-between px-4 py-3 bg-[#0A0A0A] border-b border-neutral-800 shrink-0 z-30">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setMobileOpen(true)}
+            className="p-2 rounded-lg bg-neutral-900 border border-neutral-800 text-white active:scale-95 transition-transform"
+          >
+            <Menu className="w-5 h-5 text-emerald-400" />
+          </button>
+          <span className="text-xs font-bold font-mono tracking-widest text-emerald-400 uppercase">
+            VALT SYS
+          </span>
+        </div>
+      </header>
+
+      {/* 2. MOBILE OVERLAY BACKDROP */}
+      {mobileOpen && (
+        <div 
+          onClick={() => setMobileOpen(false)}
+          className="fixed inset-0 bg-black/80 z-50 md:hidden backdrop-blur-sm transition-opacity"
+        />
+      )}
+
+      {/* 3. MOBILE SLIDE-OUT DRAWER (ONLY on Mobile) */}
       <aside
-        className={`bg-[#0A0A0A] border-r border-neutral-800 flex flex-col justify-between transition-all duration-300 z-50 shrink-0 h-full ${
+        className={`fixed inset-y-0 left-0 w-72 bg-[#0A0A0A] border-r border-neutral-800 z-50 flex flex-col justify-between transform transition-transform duration-300 ease-in-out md:hidden ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <div className="p-4 space-y-6">
+          <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
+            <span className="text-xs font-bold font-mono tracking-widest text-emerald-400 uppercase">
+              VALT SYS
+            </span>
+            <button 
+              onClick={() => setMobileOpen(false)}
+              className="p-1.5 rounded-lg bg-neutral-900 text-neutral-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <nav className="space-y-1.5">
+            {navTabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = pathname === tab.href;
+
+              return (
+                <Link
+                  key={tab.href}
+                  href={tab.href}
+                  onClick={() => setMobileOpen(false)}
+                  className={`flex items-center gap-3.5 px-3.5 py-3 rounded-lg text-xs font-medium transition-all ${
+                    isActive
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-md font-semibold"
+                      : "text-neutral-400 hover:text-white hover:bg-neutral-900"
+                  }`}
+                >
+                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-emerald-400" : "text-neutral-400"}`} />
+                  <span className="truncate tracking-wide">{tab.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </aside>
+
+      {/* 4. DESKTOP SIDEBAR (HIDDEN on Mobile) */}
+      <aside
+        className={`hidden md:flex bg-[#0A0A0A] border-r border-neutral-800 flex-col justify-between transition-all duration-300 shrink-0 h-full ${
           isExpanded ? "w-60" : "w-16"
         }`}
       >
@@ -49,11 +117,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               onClick={() => setIsExpanded(!isExpanded)}
               className="w-10 h-10 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center hover:border-neutral-700 transition-colors text-white"
             >
-              {isExpanded ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <Menu className="w-5 h-5" />
             </button>
 
             {isExpanded && (
-              <span className="text-xs font-bold font-mono tracking-widest text-neutral-400 pr-2 uppercase">
+              <span className="text-xs font-bold font-mono tracking-widest text-emerald-400 pr-2 uppercase">
                 VALT SYS
               </span>
             )}
@@ -93,8 +161,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* Main Dynamic Viewport - Vertical Scroll Enabled */}
-      <main className="flex-1 h-full overflow-y-auto bg-black p-0 w-full">
+      {/* 5. MAIN CONTENT VIEWPORT */}
+      <main className="flex-1 h-full overflow-y-auto bg-black p-3 sm:p-6 w-full">
         {children}
       </main>
     </div>
