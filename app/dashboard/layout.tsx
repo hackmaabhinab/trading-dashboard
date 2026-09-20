@@ -8,7 +8,6 @@ import {
   BarChart2, 
   BookOpen, 
   LineChart, 
-  Radio, 
   Layers, 
   Users, 
   Settings, 
@@ -23,7 +22,6 @@ const navTabs = [
   { name: "Journal", href: "/dashboard/journal", icon: BookOpen },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart2 },
   { name: "Live Chart", href: "/dashboard/chart", icon: LineChart },
-  { name: "Signals", href: "/dashboard/signals", icon: Radio },
   { name: "Community", href: "/dashboard/community", icon: Users },
   { name: "Strategy", href: "/dashboard/strategy", icon: Layers },
   { name: "News", href: "/dashboard/news", icon: Newspaper },
@@ -63,7 +61,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* 3. MOBILE SLIDE-OUT DRAWER (ONLY on Mobile) */}
       <aside
-        className={`fixed inset-y-0 left-0 w-72 bg-[#0A0A0A] border-r border-neutral-800 z-50 flex flex-col justify-between transform transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed inset-y-0 left-0 w-64 bg-[#0A0A0A] border-r border-neutral-800 z-50 flex flex-col justify-between transform transition-transform duration-300 ease-in-out md:hidden ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -80,7 +78,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
           </div>
 
-          <nav className="space-y-1.5">
+          <nav className="space-y-1.5 flex flex-col items-start">
             {navTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = pathname === tab.href;
@@ -90,14 +88,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   key={tab.href}
                   href={tab.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3.5 px-3.5 py-3 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all w-fit ${
                     isActive
-                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-md font-semibold"
+                      ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-md"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900"
                   }`}
                 >
                   <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-emerald-400" : "text-neutral-400"}`} />
-                  <span className="truncate tracking-wide">{tab.name}</span>
+                  <span className="truncate tracking-wide font-bold">{tab.name}</span>
                 </Link>
               );
             })}
@@ -108,7 +106,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* 4. DESKTOP SIDEBAR (HIDDEN on Mobile) */}
       <aside
         className={`hidden md:flex bg-[#0A0A0A] border-r border-neutral-800 flex-col justify-between transition-all duration-300 shrink-0 h-full ${
-          isExpanded ? "w-60" : "w-16"
+          isExpanded ? "w-44" : "w-16"
         }`}
       >
         <div className="p-3 space-y-6">
@@ -121,13 +119,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
 
             {isExpanded && (
-              <span className="text-xs font-bold font-mono tracking-widest text-emerald-400 pr-2 uppercase">
+              <span className="text-xs font-bold font-mono tracking-widest text-emerald-400 pr-1 uppercase">
                 VALT SYS
               </span>
             )}
           </div>
 
-          <nav className="space-y-1.5">
+          <nav className="space-y-1.5 flex flex-col items-start">
             {navTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = pathname === tab.href;
@@ -136,7 +134,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <Link
                   key={tab.href}
                   href={tab.href}
-                  className={`flex items-center gap-3.5 px-3 py-2.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs font-bold transition-all ${
+                    isExpanded ? "w-fit" : "w-10 justify-center px-0"
+                  } ${
                     isActive
                       ? "bg-neutral-800 text-white border border-neutral-700 shadow-md"
                       : "text-neutral-400 hover:text-white hover:bg-neutral-900"
@@ -144,7 +144,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   title={!isExpanded ? tab.name : ""}
                 >
                   <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-emerald-400" : "text-neutral-400"}`} />
-                  {isExpanded && <span className="truncate tracking-wide">{tab.name}</span>}
+                  {isExpanded && <span className="truncate tracking-wide font-bold">{tab.name}</span>}
                 </Link>
               );
             })}
@@ -161,8 +161,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </aside>
 
-      {/* 5. MAIN CONTENT VIEWPORT */}
-      <main className="flex-1 h-full overflow-y-auto bg-black p-3 sm:p-6 w-full">
+      {/* 5. MAIN CONTENT VIEWPORT (Fully Edge-to-Edge for ALL Tabs) */}
+      <main className="flex-1 h-full overflow-y-auto bg-black w-full p-0">
         {children}
       </main>
     </div>

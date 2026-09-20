@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Maximize, Minimize } from 'lucide-react';
-import { useDashboardData } from '@/hooks/useDashboardData';
 
 export default function DedicatedChartPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -21,25 +20,24 @@ export default function DedicatedChartPage() {
       "width": "100%",
       "height": "100%",
       "symbol": "OANDA:XAUUSD",
-      "interval": "D",
+      "interval": "15",
       "timezone": "Etc/UTC",
       "theme": "dark",
       "style": "1",
       "locale": "en",
       "enable_publishing": false,
-      "hide_side_toolbar": false, // Left toolbar for Drawing tools, Favorites & Erase All (Trash icon)
+      "backgroundColor": "#000000",
+      "gridColor": "rgba(255, 255, 255, 0.03)",
+      "hide_side_toolbar": false,
       "allow_symbol_change": true,
       "save_image": true,
       "calendar": false,
       "hide_volume": false,
       "support_host": "https://www.tradingview.com",
-      "studies": [
-        "STD;MA%Ribbon"
-      ],
+      "studies": [],
       "watchlist": [
         "OANDA:XAUUSD",
         "CAPITALCOM:DXY",
-        "TVC:US10Y",
         "FX:EURUSD",
         "FX:GBPUSD",
         "FX:USDJPY",
@@ -76,22 +74,22 @@ export default function DedicatedChartPage() {
 
   return (
     <div ref={wrapperRef} className="relative w-full h-screen bg-black overflow-hidden flex flex-col select-none">
-      {/* Floating Fullscreen Button */}
-      <div className="absolute top-3 right-14 z-50 flex items-center">
+      {/* Floating Compact Fullscreen Button */}
+      <div className="absolute top-2 right-2 z-50 flex items-center">
         <button
           onClick={toggleFullscreen}
-          className="group flex items-center gap-2 bg-neutral-900/90 hover:bg-emerald-500 text-neutral-300 hover:text-black px-3.5 py-1.5 rounded-lg text-xs font-mono font-semibold border border-neutral-800 hover:border-emerald-400 backdrop-blur-md transition-all duration-200 cursor-pointer shadow-xl active:scale-95"
+          className="group flex items-center gap-1.5 bg-neutral-900/90 hover:bg-emerald-500 text-neutral-200 hover:text-black px-2.5 py-1 rounded text-[11px] font-mono font-bold border border-neutral-800 hover:border-emerald-400 backdrop-blur-md transition-all duration-200 cursor-pointer shadow-lg active:scale-95"
           title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Chart"}
         >
           {isFullscreen ? (
             <>
-              <Minimize className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
-              <span>Exit Fullscreen</span>
+              <Minimize className="w-3 h-3 stroke-[2.5] transition-transform group-hover:scale-110" />
+              <span>EXIT</span>
             </>
           ) : (
             <>
-              <Maximize className="w-3.5 h-3.5 transition-transform group-hover:scale-110" />
-              <span>Fullscreen</span>
+              <Maximize className="w-3.5 h-3.5 stroke-[2.5] transition-transform group-hover:scale-110" />
+              <span>FULLSCREEN</span>
             </>
           )}
         </button>

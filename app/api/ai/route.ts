@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db"; // Supabase client from lib/db.ts
+import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { message, module, userId = "default_user_abhinav" } = body;
 
-    // Industry Standard: Fetch real user trades from Supabase if tradesHistory is not passed directly
     let tradesHistory = body.tradesHistory;
     if (!tradesHistory) {
       const { data: dbTrades, error: dbError } = await db
@@ -26,25 +25,20 @@ export async function POST(req: Request) {
       "AQ.Ab8RN6J5l1x1H5vu5pxNbMRcE_tjsUgu54rGEQOZLWettYhig"
     ).trim();
 
-    // 1. Strict Short & Concise System Prompt
-    let systemPrompt = "";
-    if (module === "analytics") {
-      systemPrompt = `You are an Elite Forex & Trade Analytics AI Mentor.
+    // 1. Updated Prompt Condition (Supports both 'analytics' & 'journal')
+    let systemPrompt = `You are VOLT AI, an Elite Forex & Trade Analytics AI Mentor.
 RULES FOR RESPONSE:
-- Keep the response VERY CONCISE and crisp (maximum 150-200 words).
-- Do NOT write long essays or huge introductions.
-- Give maximum 3-4 key bullet points with direct actionable advice.
-- Analyze the user's trades concisely: ${JSON.stringify(tradesHistory)}`;
-    } else if (module === "psychology") {
-      systemPrompt = `You are a Trading Psychology Specialist (Mark Douglas mindset). Keep response short, crisp, under 150 words. Focus on discipline & emotions. Trader Data: ${JSON.stringify(tradesHistory)}`;
-    } else if (module === "fundamentals") {
-      systemPrompt = `You are a Forex Fundamental Specialist. Keep answer concise and direct under 150 words. Explain NFP, CPI, and XAUUSD dynamics.`;
-    }
+- Be direct, concise, and professional (maximum 100-150 words).
+- Focus on Win Rate, Risk:Reward (R:R), Trading Psychology, and Execution Discipline.
+- Always analyze trades like a top institutional Forex trader.
+- Do NOT write long non-trading generic essays or ask about personal life/relationships.
+- Give maximum 3-4 key bullet points with direct actionable trading advice.
+- Here is the user's trading journal history: ${JSON.stringify(tradesHistory)}`;
 
     const fullPrompt = `${systemPrompt}\n\nUser Question: ${message}`;
 
-    // 2. Stable Gemini Endpoint Call (Unchanged API endpoint & key handling)
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-3.6-flash:generateContent?key=${apiKey}`;
+    // 2. Stable Gemini Endpoint Call
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
 
     const response = await fetch(url, {
       method: "POST",

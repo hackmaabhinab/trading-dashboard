@@ -1,309 +1,339 @@
 'use client';
 
-import React, { useState } from 'react';
-import { MessageSquare, Send, Image as ImageIcon, Users, MessageCircle, Sparkles, UserCheck } from 'lucide-react';
-import { useDashboardData } from '@/hooks/useDashboardData';
+import React, { useState, useEffect } from 'react';
+import { 
+  Users, 
+  Send, 
+  ShieldAlert, 
+  Lock, 
+  MessageSquare, 
+  TrendingUp, 
+  Brain, 
+  HelpCircle, 
+  Layers,
+  Sparkles,
+  Paperclip
+} from 'lucide-react';
 
-interface Comment {
+interface Reply {
   id: string;
   author: string;
+  time: string;
   text: string;
-  timestamp: string;
 }
 
-interface Message {
+interface Post {
   id: string;
   author: string;
   category: string;
-  content: string;
-  chartUrl?: string;
-  timestamp: string;
-  replies: Comment[];
+  time: string;
+  text: string;
+  replies: Reply[];
 }
 
-export default function CommunityPage() {
-  const [username, setUsername] = useState('Abhinav');
-  const [category, setCategory] = useState('General 💬');
-  const [content, setContent] = useState('');
-  const [chartUrl, setChartUrl] = useState('');
-  const [showChartInput, setShowChartInput] = useState(false);
-  
-  const [activeFilter, setActiveFilter] = useState('All');
-  const [replyInput, setReplyInput] = useState<{ [key: string]: string }>({});
+const categories = [
+  { id: 'All', label: 'ALL POSTS', icon: Layers },
+  { id: 'Trade Setups', label: 'TRADE SETUPS', icon: TrendingUp },
+  { id: 'Technical Analysis', label: 'TECHNICAL ANALYSIS', icon: Sparkles },
+  { id: 'Psychology', label: 'PSYCHOLOGY', icon: Brain },
+  { id: 'Questions', label: 'QUESTIONS', icon: HelpCircle },
+  { id: 'General', label: 'GENERAL', icon: MessageSquare },
+];
 
-  // Initial Chat Messages Feed
-  const [messages, setMessages] = useState<Message[]>([
+export default function CommunityPage() {
+  const [currentUser, setCurrentUser] = useState<string>('Abhinav Shukla');
+  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [postCategory, setPostCategory] = useState<string>('Trade Setups');
+  const [postText, setPostText] = useState<string>('');
+  const [replyInputs, setReplyInputs] = useState<{ [key: string]: string }>({});
+
+  // Dynamic Random Active Traders Counter (140 - 150)
+  const [activeTraders, setActiveTraders] = useState<number>(124);
+
+  useEffect(() => {
+    // Initial random value set karne ke liye
+    setActiveTraders(Math.floor(Math.random() * (150 - 140 + 1)) + 140);
+
+    // Har 4 second me count ko randomly badalne ke liye
+    const interval = setInterval(() => {
+      setActiveTraders(Math.floor(Math.random() * (150 - 140 + 1)) + 140);
+    }, 9000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Dynamic Posts State
+  const [posts, setPosts] = useState<Post[]>([
     {
       id: '1',
       author: 'Alex_Trader',
-      category: 'Trade Setups 📊',
-      content: 'XAUUSD look for sweep at 2500 level before continuation upwards. Classic ICT liquidity grab scenario.',
-      timestamp: '01:15 PM',
+      category: 'Trade Setups',
+      time: '01:15 PM',
+      text: 'XAUUSD look for sweep at 2500 level before continuation upwards. Classic ICT liquidity grab scenario.',
       replies: [
-        { id: 'c1', author: 'ProTrader_99', text: 'Agreed, watching the 15m order block near 2495.', timestamp: '01:17 PM' }
+        {
+          id: 'r1',
+          author: 'ProTrader_99',
+          time: '01:17 PM',
+          text: 'Agreed, watching the 15m order block near 2495.'
+        }
       ]
     }
   ]);
 
-  // Handle Post New Message
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!content.trim()) return;
+  // Handle Publish Post
+  const handlePublish = () => {
+    if (!postText.trim()) return;
 
-    const newMessage: Message = {
+    const newPost: Post = {
       id: Date.now().toString(),
-      author: username || 'Anonymous Trader',
-      category,
-      content,
-      chartUrl: chartUrl.trim() ? chartUrl : undefined,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      author: currentUser,
+      category: postCategory,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      text: postText,
       replies: []
     };
 
-    setMessages([newMessage, ...messages]);
-    setContent('');
-    setChartUrl('');
-    setShowChartInput(false);
+    setPosts([newPost, ...posts]);
+    setPostText('');
   };
 
-  // Handle Reply to a Post
-  const handleAddReply = (messageId: string) => {
-    const text = replyInput[messageId];
-    if (!text || !text.trim()) return;
+  // Handle Reply Submit
+  const handleAddReply = (postId: string) => {
+    const replyText = replyInputs[postId];
+    if (!replyText || !replyText.trim()) return;
 
-    setMessages(prev =>
-      prev.map(msg => {
-        if (msg.id === messageId) {
-          return {
-            ...msg,
-            replies: [
-              ...msg.replies,
-              {
-                id: Date.now().toString(),
-                author: username || 'Trader',
-                text,
-                timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-              }
-            ]
-          };
-        }
-        return msg;
-      })
-    );
+    setPosts(posts.map(p => {
+      if (p.id === postId) {
+        return {
+          ...p,
+          replies: [
+            ...p.replies,
+            {
+              id: Date.now().toString(),
+              author: currentUser,
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              text: replyText
+            }
+          ]
+        };
+      }
+      return p;
+    }));
 
-    setReplyInput({ ...replyInput, [messageId]: '' });
+    setReplyInputs({ ...replyInputs, [postId]: '' });
   };
 
-  const filteredMessages = messages.filter(msg => {
-    if (activeFilter === 'All') return true;
-    return msg.category.includes(activeFilter);
-  });
+  const filteredPosts = selectedCategory === 'All' 
+    ? posts 
+    : posts.filter(p => p.category.toLowerCase() === selectedCategory.toLowerCase());
 
   return (
-    <div className="min-h-screen bg-black text-slate-200 p-6 space-y-6 w-full font-sans">
+    <div className="w-full min-h-screen bg-black text-neutral-100 p-4 md:p-6 space-y-6 font-sans select-none">
       
-      {/* Top Header Title Section */}
-      <div className="flex justify-between items-center">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <Users className="w-6 h-6 text-emerald-500" />
-            <h1 className="text-2xl font-bold tracking-tight text-white">Trader Community Terminal</h1>
+      {/* 1. TOP HEADER SECTION */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-800/80 pb-5">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <Users className="w-6 h-6 text-emerald-400 shrink-0" />
+            <h1 className="text-xl md:text-2xl font-black tracking-tight text-white uppercase">
+              Trader Community Terminal
+            </h1>
           </div>
-          <p className="text-xs text-neutral-400 font-medium">
+          <p className="text-xs font-bold text-neutral-400 mt-1">
             Discuss market structure, breakdown live trade setups, and share execution psychology with pro traders.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-[#0D0D11] border border-neutral-800 px-3 py-1.5 rounded-xl">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-          <span className="text-xs font-mono text-neutral-300">Active Traders Online: <strong className="text-white">82</strong></span>
+        {/* Dynamic Live Active Indicator */}
+        <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-neutral-900/90 border border-emerald-500/30 w-fit backdrop-blur-md">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-sm shadow-emerald-500" />
+          <span className="text-[11px] font-bold text-neutral-300 tracking-wider uppercase">
+            Active Traders Online: <span className="text-emerald-400 font-black transition-all duration-500">{activeTraders}</span>
+          </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         
-        {/* Left Column: Chat Post Box + Live Feed */}
-        <div className="lg:col-span-2 space-y-6">
+        {/* 2. MAIN FEED & COMPOSER */}
+        <div className="lg:col-span-3 space-y-6">
           
-          {/* Send Message Input Card */}
-          <div className="bg-[#0D0D11] border border-neutral-800/80 rounded-2xl p-5 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between gap-3 border-b border-neutral-800/60 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-neutral-400 font-mono">Posting as:</span>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="bg-[#121218] border border-neutral-800 focus:border-emerald-500 text-white rounded-lg px-2.5 py-1 text-xs font-mono outline-none"
-                  placeholder="Your Name"
-                />
+          {/* CREATE POST CONTAINER */}
+          <div className="bg-[#0A0A0A] border border-neutral-800/90 rounded-xl p-4 md:p-5 shadow-2xl space-y-4 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500/50" />
+            
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-800/80 pb-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900/90 border border-neutral-800 rounded-lg">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Posting as:</span>
+                <span className="text-xs font-black text-emerald-400 tracking-wide">{currentUser}</span>
+                <Lock className="w-3 h-3 text-neutral-500 ml-1" />
               </div>
 
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="bg-[#121218] border border-neutral-800 focus:border-emerald-500 text-white rounded-lg px-3 py-1 text-xs font-mono outline-none cursor-pointer"
+                value={postCategory}
+                onChange={(e) => setPostCategory(e.target.value)}
+                className="bg-neutral-900 border border-neutral-800 text-neutral-200 text-xs font-bold rounded-lg px-3 py-1.5 focus:outline-none focus:border-emerald-500/50 cursor-pointer"
               >
-                <option value="Trade Setups 📊">Trade Setups 📊</option>
-                <option value="Technical Analysis 📈">Technical Analysis 📈</option>
-                <option value="Psychology 🧠">Psychology 🧠</option>
-                <option value="Questions ❓">Questions ❓</option>
-                <option value="General 💬">General 💬</option>
+                {categories.filter(c => c.id !== 'All').map((cat) => (
+                  <option key={cat.id} value={cat.id} className="bg-neutral-900 text-white font-bold">
+                    {cat.label}
+                  </option>
+                ))}
               </select>
             </div>
 
-            <form onSubmit={handleSendMessage} className="space-y-3">
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Share your trade setup, market perspective, liquidity grab scenario, or query with the community..."
-                className="w-full bg-[#121218] border border-neutral-800/80 focus:border-emerald-500 text-white rounded-xl p-3.5 text-xs outline-none resize-none h-24 transition-colors"
-              />
+            <textarea
+              value={postText}
+              onChange={(e) => setPostText(e.target.value)}
+              placeholder="Share your trade setup, market perspective, liquidity grab scenario, or query with the community..."
+              className="w-full h-28 bg-black/60 border border-neutral-800/80 rounded-lg p-3 text-xs font-bold text-neutral-100 placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/40 transition-all resize-none"
+            />
 
-              {showChartInput && (
-                <input
-                  type="text"
-                  value={chartUrl}
-                  onChange={(e) => setChartUrl(e.target.value)}
-                  placeholder="Paste TradingView Chart Image URL..."
-                  className="w-full bg-[#121218] border border-neutral-800 focus:border-emerald-500 text-white rounded-xl px-3.5 py-2 text-xs font-mono outline-none"
-                />
-              )}
-
-              <div className="flex items-center justify-between pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowChartInput(!showChartInput)}
-                  className="flex items-center gap-1.5 text-neutral-400 hover:text-white text-xs font-mono transition-colors cursor-pointer"
-                >
-                  <ImageIcon className="w-4 h-4 text-emerald-400" />
-                  <span>{showChartInput ? 'Remove Chart URL' : 'Attach Chart URL'}</span>
-                </button>
-
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-5 py-2 rounded-xl text-xs transition-colors cursor-pointer shadow-lg shadow-emerald-950/50"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Publish Message</span>
-                </button>
-              </div>
-            </form>
-          </div>
-
-          {/* Filter Categories Bar */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-            {['All', 'Trade Setups', 'Technical Analysis', 'Psychology', 'Questions', 'General'].map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setActiveFilter(cat)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-mono transition-all whitespace-nowrap cursor-pointer ${
-                  activeFilter === cat
-                    ? 'bg-emerald-600 text-white font-semibold shadow-md'
-                    : 'bg-[#0D0D11] border border-neutral-800 text-neutral-400 hover:text-white'
-                }`}
+            <div className="flex items-center justify-between pt-1">
+              <button 
+                type="button"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 text-neutral-400 hover:text-emerald-400 text-xs font-bold transition-all active:scale-95 cursor-pointer"
               >
-                {cat}
+                <Paperclip className="w-3.5 h-3.5" />
+                <span>Attach Chart URL</span>
               </button>
-            ))}
+
+              <button 
+                onClick={handlePublish}
+                type="button"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-black tracking-wider uppercase shadow-lg shadow-emerald-500/20 transition-all active:scale-95 cursor-pointer"
+              >
+                <Send className="w-3.5 h-3.5 stroke-[3]" />
+                <span>Publish Message</span>
+              </button>
+            </div>
           </div>
 
-          {/* Messages Feed */}
-          {filteredMessages.length === 0 ? (
-            <div className="bg-[#0D0D11] border border-neutral-800/80 rounded-2xl p-12 text-center space-y-3">
-              <Sparkles className="w-8 h-8 text-neutral-600 mx-auto" />
-              <h3 className="text-sm font-semibold text-white">No Discussions Yet</h3>
-              <p className="text-xs text-neutral-500">Be the first trader to start a conversation in this topic!</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {filteredMessages.map((msg) => (
-                <div key={msg.id} className="bg-[#0D0D11] border border-neutral-800/80 rounded-2xl p-5 space-y-3">
-                  
-                  {/* Card Top Header */}
-                  <div className="flex items-center justify-between border-b border-neutral-800/40 pb-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-emerald-950 border border-emerald-800/50 flex items-center justify-center text-emerald-400 text-xs font-bold font-mono">
-                        {msg.author.substring(0, 2).toUpperCase()}
-                      </div>
-                      <span className="text-xs font-bold text-white font-mono">{msg.author}</span>
-                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-neutral-900 border border-neutral-800 text-neutral-400">
-                        {msg.category}
-                      </span>
-                    </div>
+          {/* 3. CATEGORY FILTERS */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+            {categories.map((cat) => {
+              const Icon = cat.icon;
+              const isActive = selectedCategory === cat.id;
 
-                    <span className="text-[10px] font-mono text-neutral-500">{msg.timestamp}</span>
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black whitespace-nowrap transition-all border cursor-pointer ${
+                    isActive
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/50 shadow-md shadow-emerald-500/5'
+                      : 'bg-[#0A0A0A] text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-900'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-400' : 'text-neutral-500'}`} />
+                  <span>{cat.label}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* 4. POSTS FEED */}
+          <div className="space-y-4">
+            {filteredPosts.length === 0 ? (
+              <div className="p-8 text-center bg-[#0A0A0A] border border-neutral-800 rounded-xl text-neutral-500 font-bold text-xs">
+                No posts found in this category.
+              </div>
+            ) : (
+              filteredPosts.map((post) => (
+                <div key={post.id} className="bg-[#0A0A0A] border border-neutral-800/80 rounded-xl p-4 md:p-5 space-y-4">
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-black text-xs uppercase">
+                        {post.author.slice(0, 2)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-black text-white">{post.author}</span>
+                          <span className="text-[10px] font-black px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 uppercase">
+                            {post.category}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-neutral-500">{post.time}</span>
                   </div>
 
-                  {/* Content */}
-                  <p className="text-xs text-neutral-300 leading-relaxed font-sans">{msg.content}</p>
+                  <p className="text-xs font-bold text-neutral-200 leading-relaxed pl-11">
+                    {post.text}
+                  </p>
 
-                  {/* Optional Chart Image View */}
-                  {msg.chartUrl && (
-                    <div className="mt-2 rounded-xl overflow-hidden border border-neutral-800 max-h-60 bg-black/50">
-                      <img src={msg.chartUrl} alt="Chart Analysis" className="w-full object-cover" />
-                    </div>
-                  )}
-
-                  {/* Reply List Section */}
-                  {msg.replies.length > 0 && (
-                    <div className="bg-[#121218]/80 border border-neutral-800/50 rounded-xl p-3 space-y-2 mt-3">
-                      {msg.replies.map((reply) => (
-                        <div key={reply.id} className="text-xs space-y-0.5 border-b border-neutral-800/40 last:border-0 pb-1.5 last:pb-0">
+                  {post.replies.length > 0 && (
+                    <div className="ml-11 space-y-2">
+                      {post.replies.map((reply) => (
+                        <div key={reply.id} className="bg-black/50 border-l-2 border-emerald-500/50 rounded-r-lg p-3 space-y-1">
                           <div className="flex items-center justify-between">
-                            <span className="font-mono text-[11px] font-bold text-emerald-400">{reply.author}</span>
-                            <span className="text-[9px] font-mono text-neutral-500">{reply.timestamp}</span>
+                            <span className="text-xs font-black text-emerald-400">{reply.author}</span>
+                            <span className="text-[10px] font-bold text-neutral-500">{reply.time}</span>
                           </div>
-                          <p className="text-neutral-300 text-[11px]">{reply.text}</p>
+                          <p className="text-xs font-bold text-neutral-300">
+                            {reply.text}
+                          </p>
                         </div>
                       ))}
                     </div>
                   )}
 
-                  {/* Reply Input Box */}
-                  <div className="flex items-center gap-2 pt-2">
+                  <div className="ml-11 flex items-center gap-2 pt-2">
                     <input
                       type="text"
-                      value={replyInput[msg.id] || ''}
-                      onChange={(e) => setReplyInput({ ...replyInput, [msg.id]: e.target.value })}
+                      value={replyInputs[post.id] || ''}
+                      onChange={(e) => setReplyInputs({ ...replyInputs, [post.id]: e.target.value })}
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddReply(post.id)}
                       placeholder="Write a reply..."
-                      className="flex-1 bg-[#121218] border border-neutral-800 focus:border-emerald-500 text-white rounded-xl px-3 py-1.5 text-xs outline-none"
+                      className="flex-1 bg-black/60 border border-neutral-800 rounded-lg px-3 py-2 text-xs font-bold text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-700"
                     />
-                    <button
-                      onClick={() => handleAddReply(msg.id)}
-                      className="bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs px-3 py-1.5 rounded-xl font-mono transition-colors cursor-pointer shrink-0"
+                    <button 
+                      onClick={() => handleAddReply(post.id)}
+                      className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-800 hover:border-emerald-500/30 text-neutral-200 hover:text-emerald-400 text-xs font-black rounded-lg transition-all active:scale-95 cursor-pointer"
                     >
                       Reply
                     </button>
                   </div>
 
                 </div>
-              ))}
-            </div>
-          )}
-
-        </div>
-
-        {/* Right Sidebar Column: Rules & Protocol */}
-        <div className="space-y-4">
-          
-          <div className="bg-[#0D0D11] border border-neutral-800/80 rounded-2xl p-5 space-y-3">
-            <div className="flex items-center gap-2 text-emerald-400 text-xs font-semibold uppercase tracking-wider">
-              <UserCheck className="w-4 h-4" />
-              <span>Community Protocol</span>
-            </div>
-            <ul className="text-xs text-neutral-400 space-y-2.5 list-disc pl-4 font-sans leading-relaxed">
-              <li>Share high-probability trade setups with clear risk-to-reward ratio.</li>
-              <li>Keep analysis focused on technicals, liquidity sweeps, and market structure.</li>
-              <li>Respect institutional decorum and maintain professional communication.</li>
-              <li>No financial advice or direct external account management links allowed.</li>
-            </ul>
+              ))
+            )}
           </div>
 
         </div>
 
-      </div>
+        {/* 5. SIDEBAR: PROTOCOL */}
+        <div className="lg:col-span-1 space-y-4">
+          <div className="bg-[#0A0A0A] border border-neutral-800 rounded-xl p-4 space-y-3 sticky top-4">
+            <div className="flex items-center gap-2 text-emerald-400 border-b border-neutral-800 pb-2.5">
+              <ShieldAlert className="w-4 h-4 shrink-0" />
+              <h2 className="text-xs font-black tracking-widest uppercase">Community Protocol</h2>
+            </div>
+            
+            <ul className="space-y-2.5 text-[11px] font-bold text-neutral-400 leading-relaxed">
+              <li className="flex items-start gap-2">
+                <span className="text-emerald-400 font-black">•</span>
+                <span>Share high-probability trade setups with clear risk-to-reward ratio.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-emerald-400 font-black">•</span>
+                <span>Keep analysis focused on technicals, liquidity sweeps, and market structure.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-emerald-400 font-black">•</span>
+                <span>Respect institutional decorum and maintain professional communication.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-emerald-400 font-black">•</span>
+                <span>No financial advice or direct external account management links allowed.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
 
+      </div>
     </div>
   );
 }

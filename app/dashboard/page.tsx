@@ -1,343 +1,486 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  ChevronsLeft, 
-  ChevronsRight, 
-  Maximize2, 
-  AlertCircle 
+import React, { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
+import { calculateOverviewMetrics, Trade } from "@/lib/analytics";
+import {
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  Award,
+  Zap,
+  Calendar,
+  Clock,
+  ShieldAlert,
+  BarChart2,
+  Lock,
+  RefreshCw,
+  Layers
 } from "lucide-react";
-import { supabase } from "@/lib/supabase";
 
-// Dotted Horizontal Bar Component
-const DottedBar = ({ value, max = 100, color = "emerald" }: { value: number; max?: number; color?: "emerald" | "rose" }) => {
-  const dotsCount = 45;
-  const filledDots = Math.min(dotsCount, Math.round((Math.abs(value) / (max || 1)) * dotsCount));
-
-  return (
-    <div className="flex items-center gap-[2px] w-full my-1 overflow-hidden">
-      {Array.from({ length: dotsCount }).map((_, i) => (
-        <span
-          key={i}
-          className={`h-1.5 w-[3px] rounded-full transition-all ${
-            i < filledDots
-              ? color === "emerald"
-                ? "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]"
-                : "bg-rose-500 shadow-[0_0_4px_rgba(244,63,94,0.5)]"
-              : "bg-neutral-800"
-          }`}
-        />
-      ))}
-    </div>
-  );
-};
-
-export const dynamic = 'force-dynamic';
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export default function OverviewPage() {
-  const [activeRiskTab, setActiveRiskTab] = useState<"TODAY" | "THIS WEEK">("TODAY");
+  const [trades, setTrades] = useState<Trade[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
 
-  // Real-time calculated state from Supabase
-  const [stats, setStats] = useState({
-    grossPnl: 0,
-    winRate: 0,
-    avgPnl: 0,
-    profitFactor: 0,
-    totalTrades: 0,
-    wins: 0,
-    losses: 0,
-  });
+  const fetchTrades = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("trades")
+        .select("*")
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      setTrades(data || []);
+    } catch (err) {
+      console.error("Error fetching journal trades for overview:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function calculateOverviewStats() {
-      const { data: trades, error } = await supabase.from("trades").select("pnl");
-
-      if (error || !trades || trades.length === 0) {
-        setStats({
-          grossPnl: 0,
-          winRate: 0,
-          avgPnl: 0,
-          profitFactor: 0,
-          totalTrades: 0,
-          wins: 0,
-          losses: 0,
-        });
-        return;
-      }
-
-      const totalTrades = trades.length;
-      let grossPnl = 0;
-      let totalGain = 0;
-      let totalLoss = 0;
-      let wins = 0;
-      let losses = 0;
-
-      trades.forEach((t) => {
-        const val = Number(t.pnl) || 0;
-        grossPnl += val;
-        if (val > 0) {
-          totalGain += val;
-          wins++;
-        } else if (val < 0) {
-          totalLoss += Math.abs(val);
-          losses++;
-        }
-      });
-
-      const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(2) : "0.00";
-      const avgPnl = totalTrades > 0 ? (grossPnl / totalTrades).toFixed(2) : "0.00";
-      const profitFactor = totalLoss === 0 ? (totalGain > 0 ? totalGain.toFixed(2) : "0.00") : (totalGain / totalLoss).toFixed(2);
-
-      setStats({
-        grossPnl,
-        winRate: Number(winRate),
-        avgPnl: Number(avgPnl),
-        profitFactor: Number(profitFactor),
-        totalTrades,
-        wins,
-        losses,
-      });
-    }
-
-    calculateOverviewStats();
+    fetchTrades();
   }, []);
 
+  const metrics = calculateOverviewMetrics(trades);
+
+  // Month Navigation for Monthly Calendar
+  const daysInMonth = new Date(
+    selectedMonth.getFullYear(),
+    selectedMonth.getMonth() + 1,
+    0
+  ).getDate();
+  const firstDayOfMonth = new Date(
+    selectedMonth.getFullYear(),
+    selectedMonth.getMonth(),
+    1
+  ).getDay();
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
   return (
-    <div className="space-y-4 w-full text-slate-200 bg-black min-h-screen p-2 sm:p-4 font-sans">
-      
-      {/* 1. TOP KPI STATS BAR */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 p-3.5 rounded-xl flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">PnL Gross $</span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className={`text-xl font-bold ${stats.grossPnl >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
-              ${stats.grossPnl.toFixed(2)}
+    <div className="min-h-screen bg-[#0a0a0c] text-zinc-100 p-4 md:p-6 space-y-6 font-sans">
+      {/* Top Header / Branding */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800/80 pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="bg-emerald-500/10 text-emerald-400 text-xs px-2.5 py-0.5 rounded-full font-mono font-semibold border border-emerald-500/20">
+              VALT TERMINAL
             </span>
-            <span className="text-[10px] font-mono text-neutral-500 bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-800">0.00%</span>
+            <span className="text-zinc-500 text-xs">• Dynamic Journal Sync Active</span>
           </div>
+          <h1 className="text-2xl font-bold tracking-tight text-white mt-1">
+            Institutional Performance Dashboard
+          </h1>
         </div>
 
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 p-3.5 rounded-xl flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Profit Factor</span>
-          <span className="text-xl font-bold text-white mt-1">{stats.profitFactor.toFixed(2)}</span>
-        </div>
-
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 p-3.5 rounded-xl flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Avg PnL $</span>
-          <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-xl font-bold text-white">${stats.avgPnl.toFixed(2)}</span>
-            <span className="text-[10px] font-mono text-neutral-500 bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-800">0.00%</span>
-          </div>
-        </div>
-
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 p-3.5 rounded-xl flex flex-col justify-between">
-          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Win Rate</span>
-          <div className="flex items-center justify-between mt-1">
-            <span className="text-xl font-bold text-emerald-400">{stats.winRate.toFixed(2)}% <span className="text-xs text-neutral-400 font-mono">{stats.wins}</span></span>
-            <span className="text-xs font-bold text-rose-400 font-mono">{stats.losses} <span className="text-rose-400">{stats.totalTrades > 0 ? (100 - stats.winRate).toFixed(2) : "0.00"}%</span></span>
-          </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchTrades}
+            className="flex items-center gap-2 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs px-3 py-2 rounded-lg border border-zinc-800 transition-all"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-emerald-400" : ""}`} />
+            Sync Data
+          </button>
         </div>
       </div>
 
-      {/* 2. CHARTS & AI COACH SECTION */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">Account Performance</span>
-            <Maximize2 className="w-3.5 h-3.5 text-neutral-500 cursor-pointer hover:text-white" />
+      {/* KPI Top Summary Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        {/* Net PnL */}
+        <div className="bg-[#121216] border border-zinc-800/80 rounded-xl p-3.5 space-y-1">
+          <span className="text-zinc-400 text-xs font-medium">Net Gross PnL</span>
+          <div
+            className={`text-xl font-bold font-mono ${
+              metrics.netPnl >= 0 ? "text-emerald-400" : "text-rose-400"
+            }`}
+          >
+            {metrics.netPnl >= 0 ? `+$${metrics.netPnl}` : `-$${Math.abs(metrics.netPnl)}`}
           </div>
-          <div className="grid grid-cols-3 gap-2 text-xs font-mono">
-            <div><span className="text-[9px] text-neutral-500 block">Avg PnL $</span><span className="font-bold text-white">${stats.avgPnl.toFixed(2)}</span></div>
-            <div><span className="text-[9px] text-neutral-500 block">Avg PnL %</span><span className="font-bold text-white">0.00%</span></div>
-            <div><span className="text-[9px] text-neutral-500 block">Win %</span><span className="font-bold text-emerald-400">{stats.winRate.toFixed(2)}%</span></div>
+          <div className="text-[10px] text-zinc-500">Live Journal Sum</div>
+        </div>
+
+        {/* Profit Factor */}
+        <div className="bg-[#121216] border border-zinc-800/80 rounded-xl p-3.5 space-y-1">
+          <span className="text-zinc-400 text-xs font-medium">Profit Factor</span>
+          <div className="text-xl font-bold font-mono text-cyan-400">
+            {metrics.profitFactor}
           </div>
-          <div className="h-44 bg-black/40 border border-neutral-800/60 rounded-lg flex items-center justify-center text-neutral-600 text-xs font-mono">
-            [ No Trade Data Available ]
+          <div className="text-[10px] text-zinc-500">Gross Win / Gross Loss</div>
+        </div>
+
+        {/* Win Rate */}
+        <div className="bg-[#121216] border border-zinc-800/80 rounded-xl p-3.5 space-y-1">
+          <span className="text-zinc-400 text-xs font-medium">Win Rate</span>
+          <div className="text-xl font-bold font-mono text-amber-400">
+            {metrics.winRate}%
+          </div>
+          <div className="text-[10px] text-zinc-500">
+            {metrics.winsCount}W / {metrics.lossesCount}L ({trades.length} Total)
           </div>
         </div>
 
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">Daily PnL</span>
-            <span className="text-[10px] font-mono text-neutral-500">AVG: $0.00</span>
+        {/* Avg PnL */}
+        <div className="bg-[#121216] border border-zinc-800/80 rounded-xl p-3.5 space-y-1">
+          <span className="text-zinc-400 text-xs font-medium">Avg Trade PnL</span>
+          <div
+            className={`text-xl font-bold font-mono ${
+              metrics.avgPnl >= 0 ? "text-emerald-400" : "text-rose-400"
+            }`}
+          >
+            {metrics.avgPnl >= 0 ? `+$${metrics.avgPnl}` : `-$${Math.abs(metrics.avgPnl)}`}
           </div>
-          <div className="h-44 md:h-52 bg-black/40 border border-neutral-800/60 rounded-lg flex items-center justify-center text-neutral-600 text-xs font-mono">
-            [ No Executions Recorded ]
-          </div>
+          <div className="text-[10px] text-zinc-500">Per Executed Trade</div>
         </div>
 
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3 md:col-span-2 lg:col-span-1">
-          <div className="flex items-center justify-between border-b border-neutral-800/60 pb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">Cypher Coach</span>
-            <Maximize2 className="w-3.5 h-3.5 text-neutral-500" />
+        {/* Total Volume */}
+        <div className="bg-[#121216] border border-zinc-800/80 rounded-xl p-3.5 space-y-1">
+          <span className="text-zinc-400 text-xs font-medium">Total Volume</span>
+          <div className="text-xl font-bold font-mono text-purple-400">
+            {metrics.totalVolume} <span className="text-xs text-zinc-500">Lots</span>
           </div>
-          <p className="text-[11px] text-neutral-400 leading-relaxed font-sans">
-            No active trade logs found. Add executions in your Trade Journal to start receiving performance insights.
-          </p>
-          <div className="grid grid-cols-2 gap-2 text-center font-mono">
-            <div className="bg-neutral-900/60 p-2 rounded border border-neutral-800">
-              <span className="text-white text-sm font-bold block">$0.00</span>
-              <span className="text-[9px] text-neutral-500 uppercase">Week P&L</span>
-            </div>
-            <div className="bg-neutral-900/60 p-2 rounded border border-neutral-800">
-              <span className="text-white text-sm font-bold block">{stats.totalTrades}</span>
-              <span className="text-[9px] text-neutral-500 uppercase">Trades</span>
-            </div>
+          <div className="text-[10px] text-zinc-500">Cumulative Execution</div>
+        </div>
+
+        {/* Health Score */}
+        <div className="bg-[#121216] border border-zinc-800/80 rounded-xl p-3.5 space-y-1">
+          <span className="text-zinc-400 text-xs font-medium">Risk Health</span>
+          <div
+            className={`text-xl font-bold font-mono ${
+              metrics.riskHealthScore >= 70
+                ? "text-emerald-400"
+                : metrics.riskHealthScore >= 40
+                ? "text-amber-400"
+                : "text-rose-400"
+            }`}
+          >
+            {metrics.riskHealthScore}/100
           </div>
+          <div className="text-[10px] text-zinc-500">Automated Risk Metric</div>
         </div>
       </div>
 
-      {/* 3. MONTHLY CALENDAR & RISK HEALTH */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-2.5">
-        <div className="lg:col-span-2 bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">Monthly Calendar</span>
-            <div className="flex items-center gap-2 font-mono text-xs">
-              <button className="text-neutral-500 hover:text-white"><ChevronsLeft className="w-3.5 h-3.5" /></button>
-              <button className="text-neutral-500 hover:text-white"><ChevronLeft className="w-3.5 h-3.5" /></button>
-              <span className="font-bold text-white">September, 2026</span>
-              <span className="text-neutral-400 font-bold bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-800">$0.00</span>
-              <button className="text-neutral-500 hover:text-white"><ChevronRight className="w-3.5 h-3.5" /></button>
-              <button className="text-neutral-500 hover:text-white"><ChevronsRight className="w-3.5 h-3.5" /></button>
+      {/* Main Grid: Performance + VALT AI + Risk Health */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column (2 Cols): Account Performance Chart & Monthly Calendar */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Account Performance Curve */}
+          <div className="bg-[#121216] border border-zinc-800/80 rounded-xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <BarChart2 className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-sm font-semibold text-white">Account Performance Curve</h3>
+              </div>
+              <span className="text-xs text-zinc-500 font-mono">
+                Cumulative Equity Growth
+              </span>
+            </div>
+
+            <div className="h-48 w-full flex items-end gap-1.5 pt-6 pb-2 border-b border-zinc-800">
+              {metrics.accountPerformanceChart.length === 0 ? (
+                <div className="w-full h-full flex items-center justify-center text-xs text-zinc-600 font-mono">
+                  No trades logged in Journal. Equity curve will render dynamically here.
+                </div>
+              ) : (
+                metrics.accountPerformanceChart.map((pt, idx) => {
+                  const maxPnl = Math.max(
+                    ...metrics.accountPerformanceChart.map((p) => Math.abs(p.pnl)),
+                    100
+                  );
+                  const heightPercent = Math.min(
+                    100,
+                    Math.max(15, (Math.abs(pt.pnl) / maxPnl) * 100)
+                  );
+                  const isPositive = pt.pnl >= 0;
+
+                  return (
+                    <div
+                      key={idx}
+                      className="flex-1 flex flex-col items-center gap-1 group relative h-full justify-end"
+                    >
+                      {/* Tooltip */}
+                      <div className="absolute -top-8 hidden group-hover:flex bg-zinc-900 border border-zinc-700 text-[10px] text-zinc-200 px-2 py-1 rounded shadow-lg whitespace-nowrap z-10">
+                        {pt.time}: ${pt.pnl}
+                      </div>
+                      <div
+                        style={{ height: `${heightPercent}%` }}
+                        className={`w-full rounded-t transition-all ${
+                          isPositive ? "bg-emerald-500/80 hover:bg-emerald-400" : "bg-rose-500/80 hover:bg-rose-400"
+                        }`}
+                      />
+                      <span className="text-[9px] text-zinc-500 truncate w-full text-center">
+                        {pt.time}
+                      </span>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <div className="min-w-[500px]">
-              <div className="grid grid-cols-7 gap-1.5 text-center font-mono text-[10px]">
-                {["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map((d) => (
-                  <div key={d} className="text-neutral-500 font-bold py-1">{d}</div>
-                ))}
-                
-                {Array.from({ length: 30 }).map((_, idx) => (
-                  <div key={idx} className="h-12 sm:h-16 bg-neutral-900/20 rounded p-1 text-left text-neutral-600 border border-neutral-800/40">
-                    <span>{idx + 1}</span>
+          {/* Monthly Calendar */}
+          <div className="bg-[#121216] border border-zinc-800/80 rounded-xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-cyan-400" />
+                <h3 className="text-sm font-semibold text-white">
+                  Monthly Calendar ({monthNames[selectedMonth.getMonth()]} {selectedMonth.getFullYear()})
+                </h3>
+              </div>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() =>
+                    setSelectedMonth(
+                      new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() - 1, 1)
+                    )
+                  }
+                  className="px-2 py-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-xs rounded text-zinc-300"
+                >
+                  Prev
+                </button>
+                <button
+                  onClick={() =>
+                    setSelectedMonth(
+                      new Date(selectedMonth.getFullYear(), selectedMonth.getMonth() + 1, 1)
+                    )
+                  }
+                  className="px-2 py-1 bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 text-xs rounded text-zinc-300"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+
+            {/* Days Grid */}
+            <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-zinc-500 border-b border-zinc-800/60 pb-2">
+              <span>Sun</span>
+              <span>Mon</span>
+              <span>Tue</span>
+              <span>Wed</span>
+              <span>Thu</span>
+              <span>Fri</span>
+              <span>Sat</span>
+            </div>
+
+            <div className="grid grid-cols-7 gap-2">
+              {/* Empty offset days */}
+              {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+                <div key={`empty-${i}`} className="h-14 rounded bg-zinc-900/30 opacity-20" />
+              ))}
+
+              {/* Month Days */}
+              {Array.from({ length: daysInMonth }).map((_, i) => {
+                const dayNum = i + 1;
+                const monthStr = String(selectedMonth.getMonth() + 1).padStart(2, "0");
+                const dayStr = String(dayNum).padStart(2, "0");
+                const dateKey = `${selectedMonth.getFullYear()}-${monthStr}-${dayStr}`;
+                const dayPnl = metrics.monthlyCalendar[dateKey];
+
+                return (
+                  <div
+                    key={dayNum}
+                    className={`h-14 rounded-lg p-1.5 flex flex-col justify-between border text-left transition-all ${
+                      dayPnl !== undefined
+                        ? dayPnl >= 0
+                          ? "bg-emerald-950/30 border-emerald-500/30 text-emerald-400"
+                          : "bg-rose-950/30 border-rose-500/30 text-rose-400"
+                        : "bg-zinc-900/40 border-zinc-800/50 text-zinc-500"
+                    }`}
+                  >
+                    <span className="text-[10px] font-mono text-zinc-400">{dayNum}</span>
+                    {dayPnl !== undefined && (
+                      <span className="text-[11px] font-bold font-mono truncate">
+                        {dayPnl >= 0 ? `+$${dayPnl}` : `-$${Math.abs(dayPnl)}`}
+                      </span>
+                    )}
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
           </div>
         </div>
 
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-neutral-800/60 pb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">Risk Health Overview</span>
-            <AlertCircle className="w-3.5 h-3.5 text-emerald-500" />
-          </div>
-
-          <div className="flex items-center justify-around py-2">
-            <div className="text-center">
-              <span className="text-xs text-neutral-400 block font-mono">Risk Score</span>
-              <span className="text-2xl font-black text-emerald-500">0 / 100</span>
-              <span className="text-[9px] bg-emerald-500/20 text-emerald-400 font-bold px-1.5 py-0.5 rounded border border-emerald-500/30 block mt-1">OPTIMAL</span>
+        {/* Right Column (1 Col): VALT AI + Risk Overview + Plan Tracker */}
+        <div className="space-y-6">
+          {/* VAULT AI Execution Assistant */}
+          <div className="bg-gradient-to-b from-emerald-950/30 via-[#121216] to-[#121216] border border-emerald-500/30 rounded-xl p-5 space-y-3 relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Zap className="w-4 h-4 text-emerald-400" />
+                <h3 className="text-sm font-bold text-emerald-400 tracking-wider">
+                  VALT AI EXECUTION
+                </h3>
+              </div>
+              <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30 font-mono">
+                REAL-TIME INSIGHT
+              </span>
             </div>
 
-            <div className="space-y-2 text-xs font-mono">
-              <div className="bg-neutral-900 p-2 rounded border border-neutral-800">
-                <span className="text-[9px] text-neutral-500 block">Drawdown</span>
-                <span className="text-white font-bold">0.00%</span>
+            <p className="text-xs text-zinc-300 leading-relaxed italic bg-zinc-900/60 p-3 rounded-lg border border-zinc-800">
+              "{metrics.valtAiInsight}"
+            </p>
+
+            <div className="pt-2 border-t border-zinc-800/60 flex items-center justify-between text-[11px] text-zinc-400">
+              <span>Behavioral Risk Tag:</span>
+              <span className="font-semibold text-emerald-400">Disciplined Execution</span>
+            </div>
+          </div>
+
+          {/* Risk Health Overview */}
+          <div className="bg-[#121216] border border-zinc-800/80 rounded-xl p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-semibold text-white">Risk Health Overview</h3>
               </div>
-              <div className="bg-neutral-900 p-2 rounded border border-neutral-800">
-                <span className="text-[9px] text-neutral-500 block">Position Size</span>
-                <span className="text-white font-bold">N/A <span className="text-[8px] text-neutral-500">PLAN: 1.00%</span></span>
+              <span className="text-xs font-mono text-zinc-400">
+                {metrics.riskHealthScore}/100
+              </span>
+            </div>
+
+            <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
+              <div
+                style={{ width: `${metrics.riskHealthScore}%` }}
+                className={`h-full transition-all ${
+                  metrics.riskHealthScore >= 70
+                    ? "bg-emerald-400"
+                    : metrics.riskHealthScore >= 40
+                    ? "bg-amber-400"
+                    : "bg-rose-500"
+                }`}
+              />
+            </div>
+
+            <div className="space-y-2 text-xs text-zinc-400">
+              <div className="flex justify-between py-1 border-b border-zinc-800/60">
+                <span>Gross Profit:</span>
+                <span className="text-emerald-400 font-mono">+${metrics.grossProfit}</span>
               </div>
+              <div className="flex justify-between py-1 border-b border-zinc-800/60">
+                <span>Gross Loss:</span>
+                <span className="text-rose-400 font-mono">-${metrics.grossLoss}</span>
+              </div>
+              <div className="flex justify-between py-1">
+                <span>Consecutive Losses Warning:</span>
+                <span className="text-zinc-300 font-mono">Low Risk</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Plan Tracker (COMING SOON) */}
+          <div className="bg-[#121216]/60 border border-zinc-800/80 rounded-xl p-5 space-y-3 relative overflow-hidden">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-semibold text-white">Trading Plan Tracker</h3>
+              </div>
+              <span className="flex items-center gap-1 text-[10px] bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30 font-semibold font-mono">
+                <Lock className="w-3 h-3" /> COMING SOON
+              </span>
+            </div>
+
+            <div className="text-xs text-zinc-500 py-4 text-center space-y-1">
+              <p>Automated Rule Compliance & Daily Drawdown Monitoring.</p>
+              <p className="text-[10px] text-zinc-600">Feature unlock in next VALT version release.</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 4. OPEN POSITIONS & MFE/MAE */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">MFE / MAE</span>
-            <div className="flex gap-2 text-[10px] font-mono">
-              <span className="text-neutral-400">Avg: <strong className="text-white">$0.00</strong></span>
-              <span className="text-neutral-400">Max: <strong className="text-white">$0.00</strong></span>
-            </div>
+      {/* Bottom Breakdown Section: Strategy Performance, Hourly & Weekly Distribution */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Strategy Breakdown */}
+        <div className="bg-[#121216] border border-zinc-800/80 rounded-xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Award className="w-4 h-4 text-purple-400" />
+            <h3 className="text-sm font-semibold text-white">Strategy Performance</h3>
           </div>
-          <div className="h-36 bg-black/40 border border-neutral-800/60 rounded-lg flex items-center justify-center text-neutral-600 text-xs font-mono">
-            [ MAE Scatter Plot Matrix ]
+
+          <div className="space-y-2 pt-2">
+            {Object.keys(metrics.strategyPerformance).length === 0 ? (
+              <p className="text-xs text-zinc-600 italic">No strategy tags logged yet.</p>
+            ) : (
+              Object.entries(metrics.strategyPerformance).map(([strat, pnl]) => (
+                <div key={strat} className="flex justify-between items-center text-xs">
+                  <span className="text-zinc-300 font-medium">{strat}</span>
+                  <span
+                    className={`font-mono font-bold ${
+                      pnl >= 0 ? "text-emerald-400" : "text-rose-400"
+                    }`}
+                  >
+                    {pnl >= 0 ? `+$${pnl.toFixed(2)}` : `-$${Math.abs(pnl).toFixed(2)}`}
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-neutral-800/60 pb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">Open Positions</span>
-            <div className="text-right font-mono">
-              <span className="text-[9px] text-neutral-500 block uppercase">Total Unrealized PnL</span>
-              <span className="text-sm font-bold text-white">$0.00</span>
-            </div>
+        {/* Weekly Performance */}
+        <div className="bg-[#121216] border border-zinc-800/80 rounded-xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-emerald-400" />
+            <h3 className="text-sm font-semibold text-white">Weekly Distribution</h3>
           </div>
 
-          <div className="py-8 text-center font-mono text-xs text-neutral-600">
-            No Open Positions
-          </div>
-        </div>
+          <div className="grid grid-cols-7 gap-1 pt-4 h-24 items-end border-b border-zinc-800 pb-2">
+            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, idx) => {
+              const val = metrics.weeklyPerformance[idx];
+              const maxVal = Math.max(...metrics.weeklyPerformance.map((v) => Math.abs(v)), 10);
+              const height = Math.min(100, Math.max(10, (Math.abs(val) / maxVal) * 100));
 
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3 md:col-span-2 lg:col-span-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300 block border-b border-neutral-800/60 pb-2">Entry Price Range</span>
-          <div className="py-8 text-center font-mono text-xs text-neutral-600">
-            No Entry Data Recorded
-          </div>
-        </div>
-      </div>
-
-      {/* 5. RISK STATUS, PERFORMANCE & HOURLY BREAKDOWN */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5">
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-neutral-800/60 pb-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300">Current Risk Status</span>
-            <div className="flex bg-neutral-900 rounded p-0.5 border border-neutral-800 text-[10px] font-mono">
-              <button 
-                onClick={() => setActiveRiskTab("TODAY")} 
-                className={`px-2 py-0.5 rounded ${activeRiskTab === "TODAY" ? "bg-neutral-800 text-white font-bold" : "text-neutral-500"}`}
-              >
-                TODAY
-              </button>
-              <button 
-                onClick={() => setActiveRiskTab("THIS WEEK")} 
-                className={`px-2 py-0.5 rounded ${activeRiskTab === "THIS WEEK" ? "bg-neutral-800 text-white font-bold" : "text-neutral-500"}`}
-              >
-                THIS WEEK
-              </button>
-            </div>
-          </div>
-
-          <div className="text-center py-2 font-mono">
-            <span className="text-2xl font-black text-white block">$0.00</span>
-            <span className="text-[9px] text-neutral-500 uppercase">Today's PnL</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 text-xs font-mono">
-            <div className="bg-neutral-900/50 p-2 rounded border border-neutral-800">
-              <span className="text-[9px] text-neutral-500 block">Win Rate</span>
-              <span className="text-emerald-400 font-bold">{stats.winRate.toFixed(2)}%</span>
-            </div>
-            <div className="bg-neutral-900/50 p-2 rounded border border-neutral-800">
-              <span className="text-[9px] text-neutral-500 block">Current Drawdown</span>
-              <span className="text-white font-bold">0.00%</span>
-            </div>
+              return (
+                <div key={dayName} className="flex flex-col items-center gap-1 h-full justify-end">
+                  <div
+                    style={{ height: `${height}%` }}
+                    className={`w-full rounded-t ${
+                      val >= 0 ? "bg-emerald-500/70" : "bg-rose-500/70"
+                    }`}
+                  />
+                  <span className="text-[9px] text-zinc-500">{dayName}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300 block border-b border-neutral-800/60 pb-2">Weekly Performance</span>
-          <div className="py-8 text-center font-mono text-xs text-neutral-600">
-            No Executions This Week
+        {/* Hourly Distribution */}
+        <div className="bg-[#121216] border border-zinc-800/80 rounded-xl p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-cyan-400" />
+            <h3 className="text-sm font-semibold text-white">Hourly Execution Distribution</h3>
           </div>
-        </div>
 
-        <div className="bg-[#0B0B0B] border border-neutral-800/80 rounded-xl p-4 space-y-2 md:col-span-2 lg:col-span-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-300 block border-b border-neutral-800/60 pb-2">Hourly Breakdown</span>
-          <div className="py-8 text-center font-mono text-xs text-neutral-600">
-            No Executions Recorded
+          <div className="flex items-end gap-1 pt-4 h-24 border-b border-zinc-800 pb-2 overflow-x-auto">
+            {metrics.hourlyPerformance.map((val, hour) => {
+              const maxVal = Math.max(...metrics.hourlyPerformance.map((v) => Math.abs(v)), 10);
+              const height = Math.min(100, Math.max(10, (Math.abs(val) / maxVal) * 100));
+
+              return (
+                <div key={hour} className="flex-1 min-w-[8px] flex flex-col items-center h-full justify-end">
+                  <div
+                    style={{ height: `${height}%` }}
+                    className={`w-full rounded-t ${
+                      val >= 0 ? "bg-cyan-500/70" : "bg-rose-500/70"
+                    }`}
+                  />
+                  <span className="text-[8px] text-zinc-600">{hour}h</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
-
     </div>
   );
 }

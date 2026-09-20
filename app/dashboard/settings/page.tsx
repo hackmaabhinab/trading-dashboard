@@ -1,139 +1,266 @@
 'use client';
 
-import React, { useState } from 'react';
-import { User, Shield, LogOut, Save, Trash2, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { useDashboardData } from '@/hooks/useDashboardData';
+import React, { useState, useEffect } from 'react';
+import { Trash2, Save, Loader2, Check } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
 export default function SettingsPage() {
-  const { data } = useDashboardData();
-  const [displayName, setDisplayName] = useState(data?.displayName || 'ABHINAV SHUKLA');
-  const [email] = useState(data?.email || 'sakshishuklafundedac8990@gmail.com');
-  const [role] = useState(data?.role || 'VIP Institutional Member');
-  const [isSaved, setIsSaved] = useState(false);
+  const [supabase] = useState(() =>
+    createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    ),
+  );
 
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaved(true);
-    setTimeout(() => setIsSaved(false), 3000);
-  };
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const handleSignOut = () => {
-    alert('Sign Out Clicked');
-  };
+  // States
+  const [userId, setUserId] = useState<string>('');
+  const [email, setEmail] = useState<string>('');
+  const [firstName, setFirstName] = useState<string>('');
+  const [lastName, setLastName] = useState<string>('');
+  const [username, setUsername] = useState<string>('');
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  const handleWipeData = () => {
-    if (confirm('Are you sure you want to permanently erase all your data? This action cannot be undone.')) {
-      alert('Data wiped successfully.');
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadUserData() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session?.user) {
+          if (isMounted) setLoading(false);
+          return;
+        }
+
+        const user = session.user;
+        if (isMounted) {
+          setUserId(user.id);
+          setEmail(user.email || '');
+        }
+
+        // Fetch User Profile from Database
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, username, avatar_url')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profile && isMounted) {
+          setFirstName(profile.first_name || '');
+          setLastName(profile.last_name || '');
+          setUsername(profile.username || '');
+          setAvatarUrl(profile.avatar_url || null);
+        }
+      } catch (err) {
+        console.error('Error fetching data:', err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    loadUserData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [supabase]);
+
+  // Save changes to Supabase
+  const handleSaveChanges = async () => {
+    if (!userId) {
+      alert('User session not found. Please log in.');
+      return;
+    }
+
+    setSaving(true);
+    setSaveSuccess(false);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: userId,
+          first_name: firstName,
+          last_name: lastName,
+          username: username,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      alert(`Save failed: ${err.message}`);
+    } finally {
+      setSaving(false);
     }
   };
 
+  const avatarLetter = (firstName?.[0] || email?.[0] || 'U').toUpperCase();
+
+  if (loading) {
+    return (
+      <div className="w-full min-h-screen bg-black flex items-center justify-center text-emerald-400 gap-2 font-bold text-sm">
+        <Loader2 className="w-5 h-5 animate-spin" />
+        <span>Loading Account Profile...</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-black text-slate-200 p-6 space-y-6 w-full font-sans">
+    <div className="w-full min-h-screen bg-black text-neutral-100 p-8 md:p-12 font-sans select-none flex flex-col items-center">
       
-      {/* Top Header Section */}
-      <div className="flex items-center justify-between w-full">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold tracking-tight text-white">Account Settings</h1>
-          <p className="text-xs text-neutral-400 font-medium">
-            Manage your terminal profile & authentication credentials
+      {/* WIDER CONTAINER (Image 2 Proportional Layout) */}
+      <div className="w-full max-w-5xl space-y-9 my-auto">
+        
+        {/* HEADER SECTION */}
+        <div className="text-left">
+          <p className="text-xs font-black text-neutral-500 uppercase tracking-widest">
+            PERSONAL & ACCOUNT
           </p>
+          <h1 className="text-4xl font-black text-white tracking-tight mt-1.5">
+            Personal Info
+          </h1>
         </div>
 
-        <button
-          onClick={handleSignOut}
-          className="flex items-center gap-2 bg-[#0B0C10] hover:bg-neutral-800 border border-neutral-800 text-neutral-300 px-4 py-2 rounded-xl text-xs font-mono transition-colors cursor-pointer"
-        >
-          <LogOut className="w-3.5 h-3.5 text-neutral-400" />
-          <span>Sign Out</span>
-        </button>
-      </div>
-
-      {/* Main Settings Container */}
-      <div className="bg-[#0B0C10] border border-neutral-800/80 rounded-2xl p-6 shadow-2xl space-y-6 w-full">
-        
-        {/* Community Identity Form */}
-        <form onSubmit={handleSave} className="space-y-6">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-emerald-500 uppercase tracking-wider">
-              <User className="w-4 h-4" />
-              <span>Community Trader Identity</span>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono uppercase text-neutral-400 block mb-1.5">
-                DISPLAY NAME (VISIBLE ON COMMUNITY)
-              </label>
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full bg-[#12131A] border border-neutral-800/80 focus:border-emerald-500 text-white rounded-xl px-4 py-2.5 text-xs font-mono outline-none transition-colors"
-                placeholder="Enter Display Name"
+        {/* AVATAR SECTION */}
+        <div className="flex items-center gap-6">
+          <div className="relative">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Profile Avatar"
+                className="w-24 h-24 rounded-full object-cover border-2 border-neutral-800"
               />
-            </div>
-          </div>
-
-          {/* Account Credentials Section */}
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-emerald-500 uppercase tracking-wider">
-              <Shield className="w-4 h-4" />
-              <span>Account Credentials</span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-[#12131A] border border-neutral-800/80 p-4 rounded-xl space-y-1">
-                <span className="text-[10px] font-mono text-neutral-500 block">Logged In Email:</span>
-                <span className="text-xs font-mono text-emerald-400 font-semibold break-all">{email}</span>
-              </div>
-
-              <div className="bg-[#12131A] border border-neutral-800/80 p-4 rounded-xl space-y-1">
-                <span className="text-[10px] font-mono text-neutral-500 block">Role / Account Type:</span>
-                <span className="text-xs font-mono text-emerald-400 font-semibold">{role}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Save Profile Button */}
-          <div className="flex items-center gap-4 pt-2">
-            <button
-              type="submit"
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-5 py-2.5 rounded-xl text-xs transition-colors cursor-pointer shadow-lg shadow-emerald-950/50"
-            >
-              <Save className="w-4 h-4" />
-              <span>Save Profile</span>
-            </button>
-
-            {isSaved && (
-              <div className="flex items-center gap-1.5 text-xs text-emerald-400 font-mono">
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Profile details updated successfully!</span>
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-emerald-500 flex items-center justify-center text-black font-black text-4xl shadow-xl shadow-emerald-500/20">
+                {avatarLetter}
               </div>
             )}
           </div>
-        </form>
 
-      </div>
-
-      {/* Danger Zone Section */}
-      <div className="bg-[#0B0C10] border border-rose-950/60 rounded-2xl p-6 space-y-4 w-full">
-        <div className="flex items-center gap-2 text-xs font-mono font-bold text-rose-500 uppercase tracking-wider">
-          <AlertTriangle className="w-4 h-4" />
-          <span>Danger Zone: Permanent Data Erasure</span>
+          <button
+            type="button"
+            onClick={() => setAvatarUrl(null)}
+            className="flex items-center gap-2.5 px-5 py-2.5 bg-[#0D0D0D] hover:bg-neutral-900 border border-neutral-800 rounded-xl text-sm font-bold text-neutral-300 hover:text-white transition-all active:scale-95 cursor-pointer shadow-sm"
+          >
+            <span>Delete Picture</span>
+            <Trash2 className="w-4 h-4 text-neutral-400" />
+          </button>
         </div>
 
-        <p className="text-xs text-neutral-400 leading-relaxed font-sans">
-          Wiping your account will permanently remove all your trading journal logs, AI strategy chats, and saved community profile metadata from the server database.
-        </p>
+        {/* PROFILE BOX */}
+        <div className="bg-[#0A0A0A] border border-neutral-800/80 rounded-2xl p-7 space-y-5 shadow-2xl">
+          <h2 className="text-base font-black text-white tracking-wide">
+            Profile
+          </h2>
 
-        <button
-          onClick={handleWipeData}
-          className="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white font-semibold px-5 py-2.5 rounded-xl text-xs transition-colors cursor-pointer shadow-lg shadow-rose-950/50"
-        >
-          <Trash2 className="w-4 h-4" />
-          <span>Wipe Data & Logout</span>
-        </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-neutral-400">
+                First Name
+              </label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="First Name"
+                className="w-full bg-black/90 border border-neutral-800/90 rounded-xl px-4 py-3.5 text-sm font-bold text-white placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-neutral-400">
+                Last Name
+              </label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Last Name"
+                className="w-full bg-black/90 border border-neutral-800/90 rounded-xl px-4 py-3.5 text-sm font-bold text-white placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ACCOUNT DETAILS BOX */}
+        <div className="bg-[#0A0A0A] border border-neutral-800/80 rounded-2xl p-7 space-y-5 shadow-2xl">
+          <h2 className="text-base font-black text-white tracking-wide">
+            Account Details
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-neutral-400">
+                Username
+              </label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Username"
+                className="w-full bg-black/90 border border-neutral-800/90 rounded-xl px-4 py-3.5 text-sm font-bold text-white placeholder:text-neutral-600 focus:outline-none focus:border-emerald-500/50 transition-colors"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-neutral-400">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                disabled
+                className="w-full bg-neutral-900/60 border border-neutral-800/60 rounded-xl px-4 py-3.5 text-sm font-bold text-neutral-500 cursor-not-allowed select-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* ACTION BUTTONS */}
+        <div className="flex items-center justify-between pt-2">
+          <button
+            type="button"
+            onClick={async () => {
+              if (email) {
+                await supabase.auth.resetPasswordForEmail(email);
+                alert(`Password reset email sent to: ${email}`);
+              }
+            }}
+            className="flex items-center gap-2 px-5 py-3 rounded-xl bg-[#0D0D0D] hover:bg-neutral-900 border border-neutral-800 text-neutral-300 text-xs font-bold transition-all active:scale-95 cursor-pointer"
+          >
+            <span>Change Password</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSaveChanges}
+            disabled={saving}
+            className="flex items-center gap-2 px-7 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-black font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/10 transition-all active:scale-95 cursor-pointer"
+          >
+            {saving ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : saveSuccess ? (
+              <>
+                <Check className="w-4 h-4 stroke-[3]" />
+                <span>Saved!</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>Save Changes</span>
+              </>
+            )}
+          </button>
+        </div>
+
       </div>
-
     </div>
   );
 }
