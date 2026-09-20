@@ -6,9 +6,13 @@ import { createBrowserClient } from "@supabase/ssr";
 
 export default function LoginPage() {
   const router = useRouter();
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+
+  // Supabase client instance using useState to prevent re-instantiation
+  const [supabase] = useState(() =>
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
   );
 
   const [email, setEmail] = useState("");
@@ -22,7 +26,6 @@ export default function LoginPage() {
     setErrorMessage(null);
 
     try {
-      // 1. Supabase Authentication Call
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -34,13 +37,15 @@ export default function LoginPage() {
         return;
       }
 
-      // 2. Successful Login Redirect
       if (data?.user) {
-        router.push("/dashboard");
-        router.refresh();
+        // Force session refresh before route change
+        await supabase.auth.getSession();
+        
+        // Native hard push to ensure layout & middleware re-evaluate auth cookies properly
+        window.location.href = "/dashboard";
       }
     } catch (err: any) {
-      setErrorMessage("Something went wrong. Please try again.");
+      setErrorMessage(err?.message || "Something went wrong. Please try again.");
       setLoading(false);
     }
   };
