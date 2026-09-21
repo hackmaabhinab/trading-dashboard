@@ -104,49 +104,48 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
 
         {/* MOBILE SLIDE-OUT DRAWER */}
-        <aside
-          className={`fixed inset-y-0 left-0 w-64 bg-[#0A0A0A] border-r border-neutral-800 z-50 flex flex-col justify-between transform transition-transform duration-300 ease-in-out md:hidden ${
-            mobileOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-        >
-          <div className="p-4 space-y-6">
-            <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3">
-              <span className="text-xs font-bold font-mono tracking-widest text-emerald-400 uppercase">
-                VALT SYS
-              </span>
-              <button 
-                onClick={() => setMobileOpen(false)}
-                className="p-1.5 rounded-lg bg-neutral-900 text-neutral-400 hover:text-white cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+<aside
+  className={`fixed inset-y-0 left-0 w-fit max-w-[75vw] bg-[#0A0A0A] border-r border-neutral-800 z-50 flex flex-col justify-between transform transition-transform duration-300 ease-in-out md:hidden ${
+    mobileOpen ? "translate-x-0" : "-translate-x-full"
+  }`}
+>
+  <div className="p-4 space-y-6">
+    <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3 gap-6">
+      <span className="text-xs font-bold font-mono tracking-widest text-emerald-400 uppercase whitespace-nowrap">
+        VALT SYS
+      </span>
+      <button 
+        onClick={() => setMobileOpen(false)}
+        className="p-1.5 rounded-lg bg-neutral-900 text-neutral-400 hover:text-white cursor-pointer"
+      >
+        <X className="w-5 h-5" />
+      </button>
+    </div>
 
-            <nav className="space-y-1.5 flex flex-col items-start">
-              {navTabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = pathname === tab.href;
+    <nav className="space-y-1.5 flex flex-col items-stretch">
+      {navTabs.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = pathname === tab.href;
 
-                return (
-                  <Link
-                    key={tab.href}
-                    href={tab.href}
-                    onClick={() => setMobileOpen(false)}
-                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all w-fit ${
-                      isActive
-                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-md"
-                        : "text-neutral-400 hover:text-white hover:bg-neutral-900"
-                    }`}
-                  >
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-emerald-400" : "text-neutral-400"}`} />
-                    <span className="truncate tracking-wide font-bold">{tab.name}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-        </aside>
-
+        return (
+          <Link
+            key={tab.href}
+            href={tab.href}
+            onClick={() => setMobileOpen(false)}
+            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all w-full ${
+              isActive
+                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 shadow-md"
+                : "text-neutral-400 hover:text-white hover:bg-neutral-900"
+            }`}
+          >
+            <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-emerald-400" : "text-neutral-400"}`} />
+            <span className="truncate tracking-wide font-bold whitespace-nowrap">{tab.name}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  </div>
+</aside>
         {/* DESKTOP SIDEBAR */}
         <aside
           className={`hidden md:flex bg-[#0A0A0A] border-r border-neutral-800 flex-col justify-between transition-all duration-300 shrink-0 h-full ${

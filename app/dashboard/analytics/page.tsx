@@ -11,7 +11,11 @@ import {
   Mic, 
   Bot, 
   RotateCw, 
-  MessageSquare 
+  MessageSquare,
+  Menu,
+  X,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { useConfirm } from "@/app/dashboard/layout";
@@ -44,6 +48,9 @@ export default function AnalyticsPage() {
   const [tradesHistory, setTradesHistory] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPromptCategory, setSelectedPromptCategory] = useState<number>(0);
+  
+  // State for collapsible drawer / sidebar
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -91,6 +98,13 @@ export default function AnalyticsPage() {
     },
   ];
 
+  // Auto set sidebar state on desktop/mobile load
+  useEffect(() => {
+    if (window.innerWidth >= 768) {
+      setIsSidebarOpen(true);
+    }
+  }, []);
+
   // 1. Fetch User Info & Trades from Supabase using SSR session
   useEffect(() => {
     fetchUserData();
@@ -125,12 +139,10 @@ export default function AnalyticsPage() {
     localStorage.setItem("volt_ai_sessions", JSON.stringify(updatedSessions));
   };
 
-  // Fixed: Fetch exact username from Supabase 'profiles' table
   const fetchUserData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        // 1. First check profiles table for username
         const { data: profile } = await supabase
           .from('profiles')
           .select('username')
@@ -140,7 +152,6 @@ export default function AnalyticsPage() {
         if (profile?.username) {
           setUserName(profile.username.replace(/^@/, '').toUpperCase());
         } else {
-          // Fallback to user metadata or email prefix
           const name = user.user_metadata?.username || user.user_metadata?.full_name || user.email?.split("@")[0] || "TRADER";
           setUserName(name.replace(/^@/, '').toUpperCase());
         }
@@ -166,14 +177,15 @@ export default function AnalyticsPage() {
   const handleNewChat = () => {
     setCurrentSessionId(null);
     setMessages([]);
+    if (window.innerWidth < 768) setIsSidebarOpen(false);
   };
 
   const handleSelectSession = (session: ChatSession) => {
     setCurrentSessionId(session.id);
     setMessages(session.messages);
+    if (window.innerWidth < 768) setIsSidebarOpen(false);
   };
 
-  // Animated Session Delete Confirmation
   const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     confirm({
@@ -206,7 +218,6 @@ export default function AnalyticsPage() {
     if (!customText) setInputMessage("");
     setLoading(true);
 
-    // Sync state with session array
     let activeId = currentSessionId;
     let updatedSessions = [...sessions];
 
@@ -278,23 +289,46 @@ export default function AnalyticsPage() {
   );
 
   return (
-    <div className="flex h-screen w-full bg-[#080808] text-neutral-200 font-sans overflow-hidden">
-      {/* Left Sidebar */}
-      <div className="w-64 border-r border-neutral-800/60 bg-[#0D0D0D] p-3 flex flex-col justify-between shrink-0 h-full">
-        <div className="space-y-4">
-          {/* Header Branding */}
-          <div className="flex items-center gap-3 px-2 py-2">
-            <div className="h-8 w-8 rounded-lg bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
-              <div className="flex gap-0.5 items-center justify-center">
-                <span className="w-1 h-4 bg-emerald-500 rounded-full"></span>
-                <span className="w-1 h-5 bg-emerald-400 rounded-full"></span>
-                <span className="w-1 h-3 bg-emerald-600 rounded-full"></span>
+    <div className="flex h-screen w-full bg-[#080808] text-neutral-200 font-sans overflow-hidden relative">
+      {/* Mobile Backdrop Overlay */}
+      {isSidebarOpen && (
+        <div
+          onClick={() => setIsSidebarOpen(false)}
+          className="md:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300"
+        />
+      )}
+
+      {/* Animated Drawer / Sidebar */}
+      <aside
+        className={`fixed md:relative z-50 h-full w-72 bg-[#0D0D0D] border-r border-neutral-800/60 p-3 flex flex-col justify-between shrink-0 transition-transform duration-300 ease-in-out ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full md:-translate-x-full md:w-0 md:p-0 md:border-none"
+        }`}
+      >
+        <div className="space-y-4 overflow-hidden">
+          {/* Sidebar Header */}
+          <div className="flex items-center justify-between px-2 py-2">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shrink-0">
+                <div className="flex gap-0.5 items-center justify-center">
+                  <span className="w-1 h-4 bg-emerald-500 rounded-full"></span>
+                  <span className="w-1 h-5 bg-emerald-400 rounded-full"></span>
+                  <span className="w-1 h-3 bg-emerald-600 rounded-full"></span>
+                </div>
+              </div>
+              <div className="overflow-hidden">
+                <h2 className="text-sm font-bold text-white tracking-wider font-mono truncate">VOLT AI</h2>
+                <p className="text-[10px] text-neutral-500 truncate">Your Personal Coach</p>
               </div>
             </div>
-            <div className="overflow-hidden">
-              <h2 className="text-sm font-bold text-white tracking-wider font-mono truncate">VOLT AI</h2>
-              <p className="text-[10px] text-neutral-500 truncate">Your Personal Coach</p>
-            </div>
+            
+            {/* Close drawer button */}
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="p-1 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-colors"
+            >
+              <X className="w-5 h-5 md:hidden" />
+              <PanelLeftClose className="w-5 h-5 hidden md:block" />
+            </button>
           </div>
 
           {/* Search Input */}
@@ -358,10 +392,29 @@ export default function AnalyticsPage() {
           <span>Synced: {tradesHistory.length} Trades</span>
           <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
         </div>
-      </div>
+      </aside>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-full bg-[#050505] relative overflow-hidden">
+        {/* Top Header / Navigation Toggle */}
+        <div className="h-12 border-b border-neutral-900/80 bg-[#080808] px-4 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-3">
+            {!isSidebarOpen && (
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-1.5 text-neutral-400 hover:text-white rounded-lg hover:bg-neutral-800 transition-all flex items-center gap-2"
+                title="Open Sidebar"
+              >
+                <Menu className="w-5 h-5 md:hidden" />
+                <PanelLeftOpen className="w-5 h-5 hidden md:block" />
+              </button>
+            )}
+            <span className="text-xs font-semibold text-neutral-300 font-mono tracking-wider">
+              VOLT TERMINAL / ANALYTICS
+            </span>
+          </div>
+        </div>
+
         {/* Chat Messages Viewport */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 flex flex-col">
           {messages.length === 0 ? (
