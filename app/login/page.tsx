@@ -2,18 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@/utils/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
-
-  // Supabase client instance using useState to prevent re-instantiation
-  const [supabase] = useState(() =>
-    createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-  );
+  
+  // Use our SSR client helper which writes authentication tokens directly to browser cookies
+  const supabase = createClient();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,10 +33,7 @@ export default function LoginPage() {
       }
 
       if (data?.user) {
-        // Force session refresh before route change
-        await supabase.auth.getSession();
-        
-        // Native hard push to ensure layout & middleware re-evaluate auth cookies properly
+        // Hard redirect to clear page cache and force Next.js Middleware to evaluate session cookies
         window.location.href = "/dashboard";
       }
     } catch (err: any) {

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { supabase } from "@/lib/supabase";
+// SSR-compatible client helper
+import { createClient } from "@/utils/supabase/client";
 import { 
   Plus, 
   Search, 
@@ -13,6 +14,7 @@ import {
   MessageSquare 
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useConfirm } from "@/app/dashboard/layout";
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +33,8 @@ interface ChatSession {
 }
 
 export default function AnalyticsPage() {
+  const { confirm, showAlert } = useConfirm();
+
   const [userName, setUserName] = useState<string>("TRADER");
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -42,6 +46,9 @@ export default function AnalyticsPage() {
   const [selectedPromptCategory, setSelectedPromptCategory] = useState<number>(0);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Initialize SSR Supabase Client
+  const supabase = createClient();
 
   // Quick Prompts & Sub-questions Mapping
   const promptCategories = [
@@ -84,7 +91,7 @@ export default function AnalyticsPage() {
     },
   ];
 
-  // 1. Fetch User Info & Trades from Supabase
+  // 1. Fetch User Info & Trades from Supabase using SSR session
   useEffect(() => {
     fetchUserData();
     fetchJournalTrades();
@@ -118,17 +125,42 @@ export default function AnalyticsPage() {
     localStorage.setItem("volt_ai_sessions", JSON.stringify(updatedSessions));
   };
 
+  // Fixed: Fetch exact username from Supabase 'profiles' table
   const fetchUserData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const name = user.user_metadata?.full_name || user.email?.split("@")[0] || "TRADER";
-      setUserName(name.toUpperCase());
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // 1. First check profiles table for username
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profile?.username) {
+          setUserName(profile.username.replace(/^@/, '').toUpperCase());
+        } else {
+          // Fallback to user metadata or email prefix
+          const name = user.user_metadata?.username || user.user_metadata?.full_name || user.email?.split("@")[0] || "TRADER";
+          setUserName(name.replace(/^@/, '').toUpperCase());
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching user info:", err);
     }
   };
 
   const fetchJournalTrades = async () => {
-    const { data } = await supabase.from("trades").select("*").order("created_at", { ascending: false });
-    if (data) setTradesHistory(data);
+    const { data, error } = await supabase
+      .from("trades")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching trades for AI:", error.message);
+    } else if (data) {
+      setTradesHistory(data);
+    }
   };
 
   const handleNewChat = () => {
@@ -141,13 +173,21 @@ export default function AnalyticsPage() {
     setMessages(session.messages);
   };
 
+  // Animated Session Delete Confirmation
   const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const updated = sessions.filter((s) => s.id !== sessionId);
-    saveSessionsToStorage(updated);
-    if (currentSessionId === sessionId) {
-      handleNewChat();
-    }
+    confirm({
+      title: "DELETE CHAT SESSION",
+      message: "Kya aap is chat session ko delete karna chahte hain?",
+      onConfirm: () => {
+        const updated = sessions.filter((s) => s.id !== sessionId);
+        saveSessionsToStorage(updated);
+        if (currentSessionId === sessionId) {
+          handleNewChat();
+        }
+        showAlert({ title: "DELETED", message: "Chat session deleted successfully!", isSuccess: true });
+      },
+    });
   };
 
   const handleSendMessage = async (customText?: string) => {
@@ -210,7 +250,6 @@ export default function AnalyticsPage() {
       const finalMessages = [...newMessages, voltMsg];
       setMessages(finalMessages);
 
-      // Save final response to storage
       const finalSessions = updatedSessions.map((s) =>
         s.id === activeId ? { ...s, messages: finalMessages } : s
       );
@@ -234,7 +273,6 @@ export default function AnalyticsPage() {
     }
   };
 
-  
   const filteredSessions = sessions.filter((s) =>
     s.title.toLowerCase().includes(searchQuery.toLowerCase())
   );

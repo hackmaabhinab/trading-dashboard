@@ -3,14 +3,14 @@
 import React, { useState, useEffect } from "react";
 import EditTradeModal from "@/components/EditTradeModal";
 import { Edit2, RefreshCw, PlusCircle, X, Calendar, Clock, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
-import { createClient } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/client";
+import { useConfirm } from "@/app/dashboard/layout";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = createClient();
 
 export default function JournalPage() {
+  const { confirm, showAlert } = useConfirm();
+
   const [trades, setTrades] = useState<any[]>([]);
   const [selectedTrade, setSelectedTrade] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,44 +97,44 @@ export default function JournalPage() {
     }
   };
 
-  // Delete Trade Handler
-  const handleDeleteTrade = async (tradeId: string) => {
-    const confirmDelete = window.confirm("Kya aap is trade ko delete karna chahte hain?");
-    if (!confirmDelete) return;
+  // Animated Delete Trade Handler
+  const handleDeleteTrade = (tradeId: string) => {
+    confirm({
+      title: "DELETE TRADE",
+      message: "Kya aap is trade ko delete karna chahte hain?",
+      onConfirm: async () => {
+        try {
+          const { error } = await supabase
+            .from("trades")
+            .delete()
+            .eq("id", tradeId);
 
-    try {
-      const { error } = await supabase
-        .from("trades")
-        .delete()
-        .eq("id", tradeId);
+          if (error) {
+            showAlert({ title: "DELETE ERROR", message: error.message });
+            return;
+          }
 
-      if (error) {
-        alert(`Delete error: ${error.message}`);
-        return;
+          // Optimistic UI update
+          setTrades((prev) => prev.filter((t) => t.id !== tradeId));
+          showAlert({ title: "SUCCESS", message: "Trade deleted successfully!", isSuccess: true });
+        } catch (err: any) {
+          console.error("Delete exception:", err);
+          showAlert({ title: "ERROR", message: "Trade delete karne mein problem aayi." });
+        }
       }
-
-      // Optimistic UI update
-      setTrades((prev) => prev.filter((t) => t.id !== tradeId));
-    } catch (err: any) {
-      console.error("Delete exception:", err);
-      alert("Trade delete karne mein problem aayi.");
-    }
+    });
   };
 
+  // Animated Add Manual Trade Handler
   const handleAddManualTrade = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-
       const response = await fetch("/api/trades/manual", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: session?.user?.id || null,
           symbol,
           trade_type: tradeType,
           volume: Number(volume),
@@ -151,6 +151,7 @@ export default function JournalPage() {
       const json = await response.json();
 
       if (response.ok && json.success) {
+        showAlert({ title: "SUCCESS", message: "Trade saved successfully!", isSuccess: true });
         setIsManualModalOpen(false);
         setProfit("");
         setOpenPrice("");
@@ -158,11 +159,10 @@ export default function JournalPage() {
         setNotes("");
         await fetchTrades();
       } else {
-        alert(json.error || "Trade save karne mein error aaya.");
+        showAlert({ title: "SAVE ERROR", message: json.error || "Error saving trade" });
       }
     } catch (err: any) {
-      console.error("Client Submission Exception:", err);
-      alert("Network error: Server response nahi mila.");
+      showAlert({ title: "ERROR", message: err.message });
     } finally {
       setSubmitting(false);
     }

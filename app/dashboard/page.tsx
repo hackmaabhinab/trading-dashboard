@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+// 1. Updated Import: Using SSR-compatible client helper
+import { createClient } from "@/utils/supabase/client";
 import { calculateOverviewMetrics, Trade } from "@/lib/analytics";
 import {
   TrendingUp,
@@ -18,10 +19,8 @@ import {
   Layers
 } from "lucide-react";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Initialize SSR Client
+const supabase = createClient();
 
 export default function OverviewPage() {
   const [trades, setTrades] = useState<Trade[]>([]);
@@ -31,6 +30,7 @@ export default function OverviewPage() {
   const fetchTrades = async () => {
     setLoading(true);
     try {
+      // Automatic Cookie session ke through current user ka authenticated trades fetch karega
       const { data, error } = await supabase
         .from("trades")
         .select("*")
