@@ -40,9 +40,9 @@ const navTabs = [
   { name: "Journal", href: "/dashboard/journal", icon: BookOpen },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart2 },
   { name: "Live Chart", href: "/dashboard/chart", icon: LineChart },
+   { name: "News", href: "/dashboard/news", icon: Newspaper },
   { name: "Community", href: "/dashboard/community", icon: Users },
   { name: "Strategy", href: "/dashboard/strategy", icon: Layers },
-  { name: "News", href: "/dashboard/news", icon: Newspaper },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
 

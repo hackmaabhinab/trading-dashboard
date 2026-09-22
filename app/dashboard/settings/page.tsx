@@ -151,6 +151,13 @@ export default function SettingsPage() {
 
           if (tradesError) throw tradesError;
 
+          const { error: notesError } = await supabase
+            .from("daily_notes")
+            .delete()
+            .eq("user_id", userId);
+
+          if (notesError) throw notesError;
+
           localStorage.removeItem("volt_ai_sessions");
 
           showAlert({ title: "DATA WIPED", message: "All journal trades and chat history have been erased.", isSuccess: true });

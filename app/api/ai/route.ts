@@ -1,78 +1,123 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { createClient } from "@supabase/supabase-js";
+
+// Initialize Gemini
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+
+// Initialize Server-side Supabase for Caching (Admin access needed for edge routes usually, 
+// or pass user token from frontend)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { message, module, userId = "default_user_abhinav" } = body;
+    const { message, module, tradesHistory, userId } = await req.json();
 
-    let tradesHistory = body.tradesHistory;
-    if (!tradesHistory) {
-      const { data: dbTrades, error: dbError } = await db
-        .from("trades")
+    if (!tradesHistory || tradesHistory.length === 0) {
+      return NextResponse.json({ 
+        reply: "No trades found. Please log some trades in your journal first before requesting AI analysis." 
+      });
+    }
+
+    const currentTradeCount = tradesHistory.length;
+    const today = new Date().toISOString().split("T")[0];
+
+    // ==========================================
+    // 1. CACHING MECHANISM (Efficient Token Usage)
+    // ==========================================
+    if (userId && module === "analytics") {
+      const { data: cached } = await supabase
+        .from("ai_analysis")
         .select("*")
-        .eq("userId", userId);
+        .eq("user_id", userId)
+        .eq("date", today)
+        .single();
 
-      if (!dbError && dbTrades) {
-        tradesHistory = dbTrades;
-      } else {
-        tradesHistory = [];
+      // Agar aaj ka cache exist karta hai aur trade count same hai, toh direct return karo
+      if (cached && cached.trade_count === currentTradeCount) {
+        return NextResponse.json({ reply: cached.analysis });
       }
     }
 
-    const apiKey = (
-      process.env.GEMINI_API_KEY ||
-      "AQ.Ab8RN6J5l1x1H5vu5pxNbMRcE_tjsUgu54rGEQOZLWettYhig"
-    ).trim();
+    // ==========================================
+    // 2. DATA PROCESSING (For AI Context)
+    // ==========================================
+    const winningTrades = tradesHistory.filter((t: any) => Number(t.profit) > 0);
+    const losingTrades = tradesHistory.filter((t: any) => Number(t.profit) <= 0);
+    const totalProfit = winningTrades.reduce((acc: number, t: any) => acc + Number(t.profit), 0);
+    const totalLoss = losingTrades.reduce((acc: number, t: any) => acc + Math.abs(Number(t.profit)), 0);
+    
+    const winRate = ((winningTrades.length / currentTradeCount) * 100).toFixed(1);
+    const avgProfit = winningTrades.length > 0 ? (totalProfit / winningTrades.length).toFixed(2) : 0;
+    const avgLoss = losingTrades.length > 0 ? (totalLoss / losingTrades.length).toFixed(2) : 0;
 
-    // 1. Updated Prompt Condition (Supports both 'analytics' & 'journal')
-    let systemPrompt = `You are VOLT AI, an Elite Forex & Trade Analytics AI Mentor.
-RULES FOR RESPONSE:
-- Be direct, concise, and professional (maximum 100-150 words).
-- Focus on Win Rate, Risk:Reward (R:R), Trading Psychology, and Execution Discipline.
-- Always analyze trades like a top institutional Forex trader.
-- Do NOT write long non-trading generic essays or ask about personal life/relationships.
-- Give maximum 3-4 key bullet points with direct actionable trading advice.
-- Here is the user's trading journal history: ${JSON.stringify(tradesHistory)}`;
+    // Filter last 30 trades to keep token usage low
+    const recentTrades = tradesHistory.slice(0, 30).map((t: any) => ({
+      symbol: t.symbol,
+      type: t.type || t.side,
+      profit: t.profit,
+      notes: t.notes || "",
+      date: t.created_at || t.entry_at
+    }));
 
-    const fullPrompt = `${systemPrompt}\n\nUser Question: ${message}`;
+    // ==========================================
+    // 3. AI PROMPT ENGINEERING (Analysis Types)
+    // ==========================================
+    const systemPrompt = `
+      You are VOLT AI, an elite institutional trading coach. The user is asking: "${message}"
+      
+      User's Overall Performance:
+      - Total Trades: ${currentTradeCount}
+      - Win Rate: ${winRate}%
+      - Avg Profit: $${avgProfit} | Avg Loss: $${avgLoss}
+      
+      Recent Trades Context:
+      ${JSON.stringify(recentTrades)}
 
-    // 2. Stable Gemini Endpoint Call
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+      Based on the user's prompt, provide a highly actionable, data-backed response. 
+      Format the response using clean Markdown with emojis. Choose the most relevant framework from below based on the query:
 
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: fullPrompt }],
-          },
-        ],
-      }),
-    });
+      1. PERFORMANCE ANALYSIS: Highlight strengths, worst performing assets/strategies, and win rate.
+      2. RISK ANALYSIS: Compare Avg Loss vs Avg Profit, highlight R:R ratios, and give strict action steps.
+      3. PSYCHOLOGY/EMOTION: Identify tilt, revenge trading patterns (e.g., losses leading to more losses), or overtrading.
+      4. STRATEGY-WISE: Break down which setups (SMC, ICT, Order Blocks, etc.) are working and which are draining the account.
+      5. TIME-BASED: Analyze which time sessions yield the best results.
 
-    const data = await response.json();
+      Structure the response clearly. Do not use generic greetings. Be direct, authoritative, and helpful. Use headings, bullet points, and highlight critical warnings.
+    `;
 
-    if (!response.ok) {
-      console.error("Gemini Response Error:", data);
-      return NextResponse.json(
-        { error: data.error?.message || "Gemini API Call Failed" },
-        { status: response.status }
+    // ==========================================
+    // 4. GENERATE CONTENT
+    // ==========================================
+    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
+    const result = await model.generateContent(systemPrompt);
+    const text = result.response.text();
+
+    // ==========================================
+    // 5. UPDATE CACHE IN DB (If userId is available)
+    // ==========================================
+    if (userId) {
+      await supabase.from("ai_analysis").upsert(
+        {
+          user_id: userId,
+          date: today,
+          trade_count: currentTradeCount,
+          analysis: text,
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: 'user_id, date' }
       );
     }
 
-    const aiReply =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Sorry, AI could not generate a response.";
+    return NextResponse.json({ reply: text });
 
-    return NextResponse.json({ reply: aiReply, syncedWithDb: true });
-  } catch (error: any) {
-    console.error("AI Route Internal Error:", error);
+  } catch (error) {
+    console.error("Volt AI Error:", error);
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { reply: "⚠️ Analysis generation failed. Please check your data connection and API keys." },
       { status: 500 }
     );
   }

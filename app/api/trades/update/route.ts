@@ -1,50 +1,58 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-
-// Supabase Client Config
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+import { createClient } from "@/utils/supabase/server";
 
 export async function POST(req: Request) {
   try {
+    const supabase = await createClient();
     const body = await req.json();
-    const { id, strategy, emotion, notes, chart_url } = body;
 
-    if (!id) {
-      return NextResponse.json(
-        { error: "Trade ID is required" },
-        { status: 400 }
-      );
-    }
+    const {
+      id,
+      symbol,
+      trade_type,
+      volume,
+      open_price,
+      close_price,
+      stop_loss,
+      take_profit,
+      risk_reward,
+      profit,
+      strategy,
+      psychology,
+      is_learning_trade,
+      notes,
+      entry_at,
+      exit_at,
+    } = body;
 
-    // Supabase DB Update
     const { data, error } = await supabase
       .from("trades")
       .update({
+        symbol,
+        trade_type,
+        volume,
+        open_price: open_price ? Number(open_price) : null,
+        close_price: close_price ? Number(close_price) : null,
+        stop_loss: stop_loss ? Number(stop_loss) : null,
+        take_profit: take_profit ? Number(take_profit) : null,
+        risk_reward,
+        profit: Number(profit),
         strategy,
-        emotion,
+        psychology,
+        is_learning_trade: Boolean(is_learning_trade),
         notes,
-        chart_url,
-        updated_at: new Date().toISOString(),
+        entry_at,
+        exit_at,
       })
       .eq("id", id)
       .select();
 
     if (error) {
-      console.error("Supabase Update Error:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 });
     }
 
-    return NextResponse.json(
-      { success: true, message: "Trade journal updated successfully!", trade: data[0] },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true, data });
   } catch (err: any) {
-    console.error("API Error:", err);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

@@ -40,6 +40,7 @@ export default function AnalyticsPage() {
   const { confirm, showAlert } = useConfirm();
 
   const [userName, setUserName] = useState<string>("TRADER");
+  const [userId, setUserId] = useState<string | null>(null); // NEW: Added userId state
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -143,6 +144,8 @@ export default function AnalyticsPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setUserId(user.id); // NEW: Save userId to state
+        
         const { data: profile } = await supabase
           .from('profiles')
           .select('username')
@@ -246,6 +249,7 @@ export default function AnalyticsPage() {
           message: queryText,
           module: "analytics",
           tradesHistory: tradesHistory,
+          userId: userId // NEW: Passed userId in the payload
         }),
       });
 
