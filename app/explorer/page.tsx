@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Tab Data for Interactive "Seven products. One hub." Section
 const hubTabsData: Record<
@@ -19,7 +20,7 @@ const hubTabsData: Record<
     description:
       'See your top-level metrics, daily P&L, and immediate action items in a unified executive dashboard. No more switching between five different apps.',
     bullets: [
-      'Real-time P&L tracking across all accounts',
+      'Clear daily and weekly P&L logging',
       'Instant session performance summaries',
       'Active system alerts and macro warnings',
     ],
@@ -27,12 +28,12 @@ const hubTabsData: Record<
   },
   Journal: {
     tag: 'AUTOMATED JOURNAL',
-    title: 'Every fill, journaled automatically.',
+    title: 'JOURNAL TRADE',
     description:
-      'Connect once. Trades flow in real-time from your brokers and proprietary firms — auto-tagged and ready for review. Never log a trade manually again.',
+      'Connect once. Trades flow in real-time from your brokers and proprietary firms — auto-tagged and ready for review. .',
     bullets: [
-      'Auto-sync with MetaTrader & others',
-      'Rich text, screenshots & audio notes',
+      'Detailed trade logging with setup tags and chart snapshots',
+      'Psychological state and session review notes',
       'Filter by session or asset (e.g., XAUUSD)',
     ],
     visualType: 'journal',
@@ -45,13 +46,13 @@ const hubTabsData: Record<
     bullets: [
       'Real-time tick data for Forex, Crypto & Indices',
       'Advanced drawing tools & custom markers',
-      'Execute trades directly from the active chart',
+      'DARK THEME',
     ],
     visualType: 'chart',
   },
   'AI Insights': {
     tag: 'AI COACH',
-    title: "Find what's costing you. In plain English.",
+    title: "Find what's costing you. In Plain Hinglish and English.",
     description:
       'Volt AI reads your execution data and surfaces psychological leaks: revenge trading, FOMO, and tilt cycles. Understand the real psychology behind your execution.',
     bullets: [
@@ -69,37 +70,38 @@ const hubTabsData: Record<
     bullets: [
       'Live global macroeconomic calendar',
       'Instant AI impact analysis on your setups',
-      'Commitment of Traders (COT) insights',
+      'Commitment of Traders (COT) & open interest insights',
     ],
     visualType: 'news',
   },
   Strategy: {
     tag: 'EDGE TRACKER',
-    title: 'Build and track your mechanical edge.',
+    title: 'Master ICT and SMC with structured playbooks and guides.',
     description:
-      'Define your specific playbooks and setups. Monitor exactly which strategies are profitable and where you are deviating from your established plan.',
+      'Access proven institutional frameworks, complete with detailed PDFs, rule-based entry playbooks, and video walkthroughs to sharpen your edge.',
     bullets: [
-      'Custom setup tracking (e.g., Silver Bullet)',
-      'Win-rate & max drawdown per strategy',
-      'A/B test session profitability models',
+      'Comprehensive ICT & SMC strategy guides and reference PDFs',
+      'Attached video breakdowns and real market execution examples',
+      'Step-by-step entry playbooks for high-probability setups',
     ],
     visualType: 'strategy',
   },
   Community: {
-    tag: 'SPACES',
-    title: 'Your trading circle.',
+    tag: 'SPACES | COMING SOON',
+    title: 'A focused space to stay accountable and master trading psychology.',
     description:
-      'Private spaces with your friends, groups, or mentor. Share chart templates, discuss trading psychology in real-time, and stay accountable together.',
+      'Connect with like-minded individuals, share mindset breakthroughs, and keep each other disciplined through every market session.',
     bullets: [
-      'Private invite-only text & audio lounges',
-      'Share chart markups & templates instantly',
-      'Live psychological accountability checks',
+      'Real-time discussions on trading psychology and mental roadblocks',
+      'Accountability circles to avoid revenge trading and emotional tilt',
+      'Daily session check-ins and mindset progress tracking',
     ],
     visualType: 'community',
   },
 };
 
 export default function VoltLandingExplorer() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('Overview');
   const currentTabData = hubTabsData[activeTab];
 
@@ -156,6 +158,7 @@ export default function VoltLandingExplorer() {
           font-size: 22px;
           letter-spacing: -0.03em;
           color: #ffffff;
+          cursor: pointer;
         }
         .logo span.bolt {
           color: #10b981;
@@ -504,16 +507,72 @@ export default function VoltLandingExplorer() {
         .card-bg-2 { background: linear-gradient(145deg, #047857 0%, #06090e 100%); }
         .card-bg-3 { background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); }
 
-        /* FOOTER CTA */
-        .footer-cta {
-          background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+        /* TRADERZELLA-STYLE FOOTER */
+        .traderzella-footer {
+          background: #030712;
+          color: #94a3b8;
+          padding: 80px 0 40px;
+          border-top: 1px solid #1e293b;
+          font-size: 14px;
+        }
+        .footer-grid {
+          display: grid;
+          grid-template-columns: 1.8fr 1fr 1.2fr 1fr;
+          gap: 40px;
+          padding-bottom: 60px;
+          border-bottom: 1px solid #1e293b;
+        }
+        .footer-col h4 {
           color: #fff;
-          padding: 100px 0;
-          text-align: center;
+          font-size: 15px;
+          font-weight: 700;
+          margin-bottom: 20px;
+        }
+        .footer-col ul {
+          list-style: none;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .footer-col ul li {
+          cursor: pointer;
+          transition: color 0.2s;
+        }
+        .footer-col ul li:hover {
+          color: #10b981;
+        }
+        .footer-bottom {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 30px;
+          flex-wrap: wrap;
+          gap: 20px;
+        }
+        .social-icons {
+          display: flex;
+          gap: 16px;
+        }
+        .social-icon {
+          width: 36px;
+          height: 36px;
+          background: #0f172a;
+          border: 1px solid #1e293b;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: #f8fafc;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .social-icon:hover {
+          border-color: #10b981;
+          color: #10b981;
         }
 
         @media (max-width: 900px) {
-          .hero-grid, .feature-hero-card, .coach-grid, .three-cards-grid {
+          .hero-grid, .feature-hero-card, .coach-grid, .three-cards-grid, .footer-grid {
             grid-template-columns: 1fr;
           }
           .hero-title { font-size: 40px; }
@@ -525,19 +584,19 @@ export default function VoltLandingExplorer() {
       <header>
         <div className="container">
           <nav>
-            <div className="logo">
+            <div className="logo" onClick={() => router.push('/')}>
               <span className="bolt">⚡</span> VOLT TERMINAL
             </div>
             <ul className="nav-menu">
-              <li>Overview</li>
-              <li>Journal</li>
-              <li>Charting</li>
-              <li>AI Insights</li>
-              <li>Community</li>
+              <li onClick={() => router.push('/')}>Overview</li>
+              <li onClick={() => router.push('/')}>Journal</li>
+              <li onClick={() => router.push('/')}>Charting</li>
+              <li onClick={() => router.push('/')}>AI Insights</li>
+              <li onClick={() => router.push('/')}>Community</li>
             </ul>
             <div className="nav-actions">
-              <button className="btn-link">Log In</button>
-              <button className="btn-gradient">Get Started ›</button>
+              <button className="btn-link" onClick={() => router.push('/login')}>Log In</button>
+              <button className="btn-gradient" onClick={() => router.push('/login')}>Get Started ›</button>
             </div>
           </nav>
         </div>
@@ -557,7 +616,7 @@ export default function VoltLandingExplorer() {
               </p>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                <button className="btn-gradient" style={{ padding: '16px 36px', fontSize: '16px' }}>
+                <button className="btn-gradient" onClick={() => router.push('/login')} style={{ padding: '16px 36px', fontSize: '16px' }}>
                   Open Dashboard
                 </button>
               </div>
@@ -674,7 +733,7 @@ export default function VoltLandingExplorer() {
                 ))}
               </ul>
 
-              <button className="btn-gradient" style={{ marginTop: '28px', padding: '12px 24px', fontSize: '14px' }}>
+              <button className="btn-gradient" onClick={() => router.push('/login')} style={{ marginTop: '28px', padding: '12px 24px', fontSize: '14px' }}>
                 Launch Module →
               </button>
             </div>
@@ -700,7 +759,7 @@ export default function VoltLandingExplorer() {
                     </div>
                   </div>
                   <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', color: '#bfdbfe', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span>⚡</span> <span><strong>System Status:</strong> All proprietary and personal accounts synced perfectly.</span>
+                    <span>⚡</span> <span><strong>System Status:</strong> Excellent execution! Your Win Rate is 68.4% with a strong Profit Factor of 4.5. Your edge is robust.</span>
                   </div>
                 </div>
               )}
@@ -818,7 +877,7 @@ export default function VoltLandingExplorer() {
               {currentTabData.visualType === 'community' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#10b981', marginBottom: '4px' }}>
-                    💬 Trading Psychology Lounge
+                    💬 Trading Lounge
                   </div>
                   <div style={{ background: '#0d131f', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b', fontSize: '14px', color: '#94a3b8', lineHeight: 1.5 }}>
                     <strong style={{ color: '#fff' }}>You:</strong> Caught myself revenge trading after that early stop-out on the Gold long. Going to step away for the session.
@@ -911,8 +970,8 @@ export default function VoltLandingExplorer() {
               SEAMLESS CONNECTIONS
             </div>
             <h2 style={{ fontSize: '42px', fontWeight: 800, color: '#fff' }}>
-              Powerful and Automated <br />
-              <span className="grad-text">Data Syncing</span>
+              COMING SOON<br />
+              <span className="grad-text">Powerful and Automated Data Syncing</span>
             </h2>
             <p style={{ color: '#94a3b8', marginTop: '12px', fontSize: '18px' }}>
               Connect your favorite platforms. We pull the data silently in the background while you focus on the charts.
@@ -948,7 +1007,7 @@ export default function VoltLandingExplorer() {
               <div>
                 <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px' }}>Cloud Performance</h3>
                 <p style={{ fontSize: '15px', opacity: 0.8, lineHeight: 1.6 }}>
-                  Built for speed. No heavy background processes that lag your PC during screen recording. Fully optimized for tablet analysis.
+                  Built for speed. No heavy background processes that lag your PC during analysis. Fully optimized for pc and mobile analysis.
                 </p>
               </div>
               <div style={{ background: 'rgba(255,255,255,0.08)', padding: '16px', borderRadius: '12px', fontSize: '13px', color: '#10b981' }}>
@@ -959,18 +1018,69 @@ export default function VoltLandingExplorer() {
         </div>
       </section>
 
-      {/* FOOTER CTA */}
-      <footer className="footer-cta">
+      {/* TRADERZELLA-STYLE FOOTER */}
+      <footer className="traderzella-footer">
         <div className="container">
-          <h2 style={{ fontSize: '48px', fontWeight: 800, marginBottom: '20px' }}>
-            Ready to master your edge?
-          </h2>
-          <p style={{ fontSize: '20px', opacity: 0.9, marginBottom: '36px', maxWidth: '600px', margin: '0 auto 36px' }}>
-            Join ambitious traders taking control of their psychology and data with VOLT TERMINAL.
-          </p>
-          <button style={{ background: '#06090e', color: '#fff', fontSize: '16px', fontWeight: 700, padding: '16px 40px', borderRadius: '9999px', border: 'none', cursor: 'pointer', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', transition: 'transform 0.2s' }}>
-            Launch VOLT Explorer
-          </button>
+          <div className="footer-grid">
+            <div className="footer-col">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '20px', fontWeight: 800, color: '#fff', marginBottom: '16px' }}>
+                <span style={{ color: '#10b981' }}>⚡</span> VOLT TERMINAL
+              </div>
+              <p style={{ fontSize: '13px', lineHeight: 1.6, color: '#94a3b8', maxWidth: '340px' }}>
+                Tools for futures, currency & options involves substantial risk & is not appropriate for everyone. Only risk capital should be used for trading. Testimonials appearing on this website may not be representative of other clients or customers and is not a guarantee of future performance or success.
+              </p>
+            </div>
+
+            <div className="footer-col">
+              <h4>Navigation</h4>
+              <ul>
+                <li onClick={() => router.push('/login')}>Log In</li>
+                <li onClick={() => router.push('/')}>Features</li>
+                <li onClick={() => router.push('/')}>Solutions</li>
+                <li onClick={() => router.push('/')}>Blog</li>
+                <li onClick={() => router.push('/')}>Pricing</li>
+                <li onClick={() => router.push('/')}>Supported Brokers</li>
+                <li onClick={() => router.push('/')}>Become A Partner</li>
+              </ul>
+            </div>
+
+            <div className="footer-col">
+              <h4>Compare Journals & Tools</h4>
+              <ul>
+                <li onClick={() => router.push('/')}>vs. TraderSync</li>
+                <li onClick={() => router.push('/')}>vs. Edgework</li>
+                <li onClick={() => router.push('/')}>vs. Notion</li>
+                <li onClick={() => router.push('/')}>vs. Excel</li>
+                <li onClick={() => router.push('/')}>vs. TradingView</li>
+                <li onClick={() => router.push('/')}>vs. FX Replay</li>
+              </ul>
+            </div>
+
+            <div className="footer-col">
+              <h4>Company & Support</h4>
+              <ul>
+                <li onClick={() => router.push('/')}>Contact Us</li>
+                <li onClick={() => router.push('/')}>Careers</li>
+                <li onClick={() => router.push('/')}>Wall of love 💜</li>
+                <li onClick={() => router.push('/')}>Privacy Policy</li>
+                <li onClick={() => router.push('/')}>Terms & Conditions</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="footer-bottom">
+            <div className="social-icons">
+              <div className="social-icon" onClick={() => router.push('/')}>𝕏</div>
+              <div className="social-icon" onClick={() => router.push('/')}>📸</div>
+              <div className="social-icon" onClick={() => router.push('/')}>in</div>
+              <div className="social-icon" onClick={() => router.push('/')}>💬</div>
+              <div className="social-icon" onClick={() => router.push('/')}>f</div>
+            </div>
+            <div style={{ fontSize: '13px', color: '#64748b', cursor: 'pointer' }} onClick={() => router.push('/')}>
+              WEBSITE DESIGN AND DEVELOP BY ABHINAV SHUKLA
+              CONTACT NO - 6306217843 »
+            </div>
+          </div>
         </div>
       </footer>
     </div>

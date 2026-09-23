@@ -14,11 +14,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [signupNotice, setSignupNotice] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorMessage(null);
+    setSignupNotice(null);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -42,6 +44,14 @@ export default function LoginPage() {
     }
   };
 
+  const handleSignupClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+    setSignupNotice(
+      "To get an account and complete your payment, please contact our team on WhatsApp at 6306217843 or message on Telegram at @frxabhinab."
+    );
+  };
+
   return (
     <div className="min-h-screen w-screen bg-black flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-[#0B0B0B] border border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
@@ -56,6 +66,14 @@ export default function LoginPage() {
         {errorMessage && (
           <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs text-center font-semibold">
             {errorMessage}
+          </div>
+        )}
+
+        {/* Signup / Payment Notice Box */}
+        {signupNotice && (
+          <div className="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs text-center space-y-1.5 animate-fadeIn">
+            <p className="font-bold uppercase tracking-wider">Account Creation & Payment</p>
+            <p className="text-neutral-300 leading-relaxed">{signupNotice}</p>
           </div>
         )}
 
@@ -96,6 +114,19 @@ export default function LoginPage() {
             {loading ? "Authenticating..." : "Log In"}
           </button>
         </form>
+
+        {/* Sign Up Link Section */}
+        <div className="text-center pt-2 border-t border-neutral-900/80">
+          <p className="text-xs text-neutral-400">
+            Don’t have an account?{" "}
+            <button 
+              onClick={handleSignupClick}
+              className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-4 cursor-pointer bg-transparent border-none p-0 inline-block"
+            >
+              Sign up
+            </button>
+          </p>
+        </div>
       </div>
     </div>
   );
