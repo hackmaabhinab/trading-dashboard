@@ -1,289 +1,978 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import Link from "next/link";
-import { 
-  BarChart3, 
-  BrainCircuit, 
-  ShieldCheck, 
-  TrendingUp, 
-  ArrowRight, 
-  CheckCircle2, 
-  Star, 
-  Sparkles,
-  Bot,
-  Activity,
-  History
-} from "lucide-react";
+import React, { useState } from 'react';
 
-export default function ExplorerLandingPage() {
-  const [activeTab, setActiveTab] = useState<"identify" | "optimize" | "protect">("identify");
+// Tab Data for Interactive "Seven products. One hub." Section
+const hubTabsData: Record<
+  string,
+  {
+    tag: string;
+    title: string;
+    description: string;
+    bullets: string[];
+    visualType: string;
+  }
+> = {
+  Overview: {
+    tag: 'DASHBOARD',
+    title: 'Your entire trading universe, at a glance.',
+    description:
+      'See your top-level metrics, daily P&L, and immediate action items in a unified executive dashboard. No more switching between five different apps.',
+    bullets: [
+      'Real-time P&L tracking across all accounts',
+      'Instant session performance summaries',
+      'Active system alerts and macro warnings',
+    ],
+    visualType: 'overview',
+  },
+  Journal: {
+    tag: 'AUTOMATED JOURNAL',
+    title: 'Every fill, journaled automatically.',
+    description:
+      'Connect once. Trades flow in real-time from your brokers and proprietary firms — auto-tagged and ready for review. Never log a trade manually again.',
+    bullets: [
+      'Auto-sync with MetaTrader & others',
+      'Rich text, screenshots & audio notes',
+      'Filter by session or asset (e.g., XAUUSD)',
+    ],
+    visualType: 'journal',
+  },
+  'Live Chart': {
+    tag: 'INTEGRATED CHARTING',
+    title: 'Institutional charting, built right in.',
+    description:
+      'Analyze price action, mark up liquidity pools, and spot precise Smart Money Concepts (SMC) directly inside your terminal workflow.',
+    bullets: [
+      'Real-time tick data for Forex, Crypto & Indices',
+      'Advanced drawing tools & custom markers',
+      'Execute trades directly from the active chart',
+    ],
+    visualType: 'chart',
+  },
+  'AI Insights': {
+    tag: 'AI COACH',
+    title: "Find what's costing you. In plain English.",
+    description:
+      'Volt AI reads your execution data and surfaces psychological leaks: revenge trading, FOMO, and tilt cycles. Understand the real psychology behind your execution.',
+    bullets: [
+      'Behavioral pattern & tilt detection',
+      'Time-of-day and session analysis',
+      'Actionable advice to fix mental leaks',
+    ],
+    visualType: 'ai',
+  },
+  'News & AI': {
+    tag: 'MACRO & SENTIMENT',
+    title: 'Macro news, translated by AI.',
+    description:
+      'Real-time macroeconomic feeds (CPI, NFP, COT data) paired with instant AI analysis on how upcoming news events will impact currency and commodity dynamics.',
+    bullets: [
+      'Live global macroeconomic calendar',
+      'Instant AI impact analysis on your setups',
+      'Commitment of Traders (COT) insights',
+    ],
+    visualType: 'news',
+  },
+  Strategy: {
+    tag: 'EDGE TRACKER',
+    title: 'Build and track your mechanical edge.',
+    description:
+      'Define your specific playbooks and setups. Monitor exactly which strategies are profitable and where you are deviating from your established plan.',
+    bullets: [
+      'Custom setup tracking (e.g., Silver Bullet)',
+      'Win-rate & max drawdown per strategy',
+      'A/B test session profitability models',
+    ],
+    visualType: 'strategy',
+  },
+  Community: {
+    tag: 'SPACES',
+    title: 'Your trading circle.',
+    description:
+      'Private spaces with your friends, groups, or mentor. Share chart templates, discuss trading psychology in real-time, and stay accountable together.',
+    bullets: [
+      'Private invite-only text & audio lounges',
+      'Share chart markups & templates instantly',
+      'Live psychological accountability checks',
+    ],
+    visualType: 'community',
+  },
+};
+
+export default function VoltLandingExplorer() {
+  const [activeTab, setActiveTab] = useState('Overview');
+  const currentTabData = hubTabsData[activeTab];
 
   return (
-    <div className="min-h-screen w-full bg-black text-slate-100 font-sans selection:bg-emerald-500 selection:text-black overflow-x-hidden">
-      
-      {/* 1. TOP NAVBAR */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-black/80 backdrop-blur-md border-b border-neutral-800/80 w-full">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-sm font-black font-mono tracking-widest text-emerald-400 uppercase">
-              VALT SYS
-            </span>
-            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-mono">
-              v3.6-Flash
-            </span>
-          </div>
+    <div className="volt-root">
+      <style jsx global>{`
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
 
-          <nav className="hidden md:flex items-center gap-8 text-xs font-medium text-neutral-400">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#cypher" className="hover:text-white transition-colors">AI Coach</a>
-            <a href="#backtest" className="hover:text-white transition-colors">Backtest</a>
-            <a href="#reviews" className="hover:text-white transition-colors">Reviews</a>
+        .volt-root {
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+          color: #f8fafc;
+          background-color: #06090e;
+          overflow-x: hidden;
+          width: 100%;
+        }
+
+        .container {
+          max-width: 1240px;
+          margin: 0 auto;
+          padding: 0 24px;
+        }
+
+        /* Emerald Green Gradients & Accents */
+        .grad-text {
+          background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        /* Header Navbar */
+        header {
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          background: rgba(6, 9, 14, 0.85);
+          backdrop-filter: blur(12px);
+          border-bottom: 1px solid #1e293b;
+        }
+        nav {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          height: 76px;
+        }
+        .logo {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-weight: 800;
+          font-size: 22px;
+          letter-spacing: -0.03em;
+          color: #ffffff;
+        }
+        .logo span.bolt {
+          color: #10b981;
+          font-size: 24px;
+        }
+        .nav-menu {
+          display: flex;
+          gap: 32px;
+          list-style: none;
+          font-size: 15px;
+          font-weight: 500;
+          color: #94a3b8;
+        }
+        .nav-menu li {
+          cursor: pointer;
+          transition: color 0.2s;
+        }
+        .nav-menu li:hover {
+          color: #10b981;
+        }
+        .nav-actions {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+        .btn-link {
+          background: transparent;
+          border: none;
+          font-weight: 600;
+          font-size: 15px;
+          color: #f8fafc;
+          cursor: pointer;
+        }
+        .btn-gradient {
+          background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+          color: #fff;
+          font-weight: 600;
+          font-size: 15px;
+          padding: 10px 22px;
+          border-radius: 9999px;
+          border: none;
+          cursor: pointer;
+          box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-gradient:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+        }
+
+        /* HERO SECTION */
+        .hero-section {
+          padding: 80px 0 100px;
+          background: radial-gradient(circle at 80% 20%, rgba(16, 185, 129, 0.12) 0%, rgba(6, 9, 14, 0) 60%),
+                      radial-gradient(circle at 10% 60%, rgba(5, 150, 105, 0.12) 0%, rgba(6, 9, 14, 0) 60%);
+        }
+        .hero-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 48px;
+          align-items: center;
+        }
+        .hero-title {
+          font-size: 60px;
+          font-weight: 800;
+          line-height: 1.08;
+          letter-spacing: -0.04em;
+          color: #ffffff;
+          margin-bottom: 24px;
+        }
+        .hero-sub {
+          font-size: 18px;
+          line-height: 1.6;
+          color: #94a3b8;
+          margin-bottom: 32px;
+          max-width: 500px;
+        }
+
+        .tools-pills {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: 48px;
+        }
+        .pill {
+          padding: 8px 16px;
+          border-radius: 9999px;
+          border: 1px solid #1e293b;
+          background: #0f172a;
+          font-size: 13px;
+          font-weight: 600;
+          color: #94a3b8;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .pill.active {
+          background: #10b981;
+          color: #ffffff;
+          border-color: #10b981;
+        }
+
+        /* HERO MOCKUP CARD */
+        .hero-mockup {
+          position: relative;
+          background: #0d131f;
+          border-radius: 20px;
+          padding: 24px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+          border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        .dashboard-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #1e293b;
+          color: #94a3b8;
+          font-size: 13px;
+        }
+        .float-card {
+          position: absolute;
+          background: rgba(15, 23, 42, 0.95);
+          backdrop-filter: blur(8px);
+          border-radius: 14px;
+          padding: 16px 20px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+          border: 1px solid #1e293b;
+          z-index: 10;
+        }
+        .float-top {
+          top: -20px;
+          right: -20px;
+          width: 260px;
+        }
+        .float-bottom {
+          bottom: 30px;
+          left: -30px;
+          width: 280px;
+        }
+
+        /* HUB SECTION */
+        .hub-section {
+          padding: 100px 0;
+          text-align: center;
+          background: #090d16;
+          border-top: 1px solid #1e293b;
+        }
+        .section-tag {
+          font-size: 13px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          color: #10b981;
+          margin-bottom: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+        }
+        .section-tag span {
+          width: 6px;
+          height: 6px;
+          background: #10b981;
+          border-radius: 50%;
+        }
+        .section-title {
+          font-size: 48px;
+          font-weight: 800;
+          letter-spacing: -0.03em;
+          margin-bottom: 16px;
+          color: #fff;
+        }
+        .section-sub {
+          font-size: 18px;
+          color: #94a3b8;
+          margin-bottom: 48px;
+        }
+
+        .hub-tabs {
+          display: flex;
+          justify-content: center;
+          gap: 12px;
+          margin-bottom: 48px;
+          flex-wrap: wrap;
+        }
+        .tab-btn {
+          padding: 12px 24px;
+          border-radius: 9999px;
+          border: 1px solid #1e293b;
+          background: #0d131f;
+          font-weight: 600;
+          font-size: 14px;
+          color: #94a3b8;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .tab-btn:hover {
+          color: #fff;
+          border-color: #334155;
+        }
+        .tab-btn.active {
+          border-color: #10b981;
+          color: #10b981;
+          background: rgba(16, 185, 129, 0.1);
+          box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+        }
+
+        .feature-hero-card {
+          background: #0d131f;
+          border-radius: 24px;
+          border: 1px solid #1e293b;
+          padding: 50px;
+          display: grid;
+          grid-template-columns: 1fr 1.2fr;
+          gap: 48px;
+          text-align: left;
+          align-items: center;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+          transition: all 0.3s ease;
+        }
+
+        /* DARK SECTION: VOLT AI COACH */
+        .dark-coach-section {
+          background: #06090e;
+          color: #fff;
+          padding: 120px 0;
+          position: relative;
+          overflow: hidden;
+          border-top: 1px solid #1e293b;
+        }
+        .dark-coach-section::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 800px;
+          height: 400px;
+          background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(6, 9, 14, 0) 70%);
+          pointer-events: none;
+        }
+        .coach-grid {
+          display: grid;
+          grid-template-columns: 1.2fr 1fr;
+          gap: 40px;
+          margin-top: 60px;
+        }
+        .chat-box {
+          background: #0f172a;
+          border: 1px solid #1e293b;
+          border-radius: 20px;
+          padding: 28px;
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        .chat-msg {
+          padding: 16px 20px;
+          border-radius: 14px;
+          font-size: 14px;
+          line-height: 1.5;
+          max-width: 85%;
+        }
+        .msg-user {
+          align-self: flex-end;
+          background: #1e293b;
+          color: #f8fafc;
+        }
+        .msg-ai {
+          align-self: flex-start;
+          background: #064e3b;
+          border: 1px solid rgba(16, 185, 129, 0.3);
+          color: #ecfdf5;
+        }
+
+        .pattern-cards {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        .pattern-card {
+          background: #0f172a;
+          border: 1px solid #1e293b;
+          padding: 20px;
+          border-radius: 16px;
+          display: flex;
+          gap: 16px;
+          align-items: center;
+        }
+        .pattern-icon {
+          width: 42px;
+          height: 42px;
+          border-radius: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+        }
+
+        /* NUMBERED STEPS SECTIONS */
+        .step-section {
+          padding: 120px 0;
+          position: relative;
+          background: #06090e;
+          border-top: 1px solid #1e293b;
+        }
+        .big-number {
+          font-size: 180px;
+          font-weight: 900;
+          color: rgba(255, 255, 255, 0.03);
+          position: absolute;
+          top: 40px;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 1;
+          user-select: none;
+        }
+        .step-header {
+          text-align: center;
+          max-width: 700px;
+          margin: 0 auto 60px;
+          position: relative;
+          z-index: 2;
+        }
+
+        .three-cards-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 28px;
+          position: relative;
+          z-index: 2;
+        }
+        .gradient-feature-card {
+          border-radius: 20px;
+          padding: 36px 28px;
+          color: #fff;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          min-height: 340px;
+          border: 1px solid #1e293b;
+          box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+        .card-bg-1 { background: linear-gradient(145deg, #064e3b 0%, #0d131f 100%); }
+        .card-bg-2 { background: linear-gradient(145deg, #047857 0%, #06090e 100%); }
+        .card-bg-3 { background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); }
+
+        /* FOOTER CTA */
+        .footer-cta {
+          background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+          color: #fff;
+          padding: 100px 0;
+          text-align: center;
+        }
+
+        @media (max-width: 900px) {
+          .hero-grid, .feature-hero-card, .coach-grid, .three-cards-grid {
+            grid-template-columns: 1fr;
+          }
+          .hero-title { font-size: 40px; }
+          .big-number { font-size: 100px; }
+        }
+      `}</style>
+
+      {/* NAVBAR */}
+      <header>
+        <div className="container">
+          <nav>
+            <div className="logo">
+              <span className="bolt">⚡</span> VOLT TERMINAL
+            </div>
+            <ul className="nav-menu">
+              <li>Overview</li>
+              <li>Journal</li>
+              <li>Charting</li>
+              <li>AI Insights</li>
+              <li>Community</li>
+            </ul>
+            <div className="nav-actions">
+              <button className="btn-link">Log In</button>
+              <button className="btn-gradient">Get Started ›</button>
+            </div>
           </nav>
-
-          <div className="flex items-center gap-3">
-            <Link 
-              href="/login" 
-              className="text-xs font-medium text-neutral-300 hover:text-white px-3 py-2 rounded-lg transition-colors"
-            >
-              Log In
-            </Link>
-            <Link 
-              href="/dashboard" 
-              className="text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black px-4 py-2 rounded-lg transition-all shadow-[0_0_15px_rgba(16,185,129,0.3)] active:scale-95"
-            >
-              Start Free Trial
-            </Link>
-          </div>
         </div>
       </header>
 
-      {/* MAIN CONTAINER CENTERED */}
-      <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 pt-28 pb-16">
+      {/* HERO SECTION */}
+      <section className="hero-section">
+        <div className="container">
+          <div className="hero-grid">
+            <div>
+              <h1 className="hero-title">
+                The Complete <br />
+                <span className="grad-text">Trading Ecosystem</span>
+              </h1>
+              <p className="hero-sub">
+                A lightning-fast, cloud-based terminal that won't lag your setup. Fully optimized for your desktop, tablet, and mobile workflow. Trade, journal, analyze, and connect — all in one place.
+              </p>
 
-        {/* 2. HERO SECTION */}
-        <section className="text-center space-y-6 py-8">
-          <div className="inline-flex items-center gap-2 bg-neutral-900/90 border border-neutral-800 px-3.5 py-1.5 rounded-full text-xs font-mono text-emerald-400">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Next-Gen Institutional AI Trading Journal</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <button className="btn-gradient" style={{ padding: '16px 36px', fontSize: '16px' }}>
+                  Open Dashboard
+                </button>
+              </div>
+
+              <div className="tools-pills">
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#10b981', width: '100%', letterSpacing: '0.05em' }}>
+                  YOUR TOOLS
+                </span>
+                <span className="pill active">• Overview</span>
+                <span className="pill">Journal</span>
+                <span className="pill">Live Chart</span>
+                <span className="pill">AI Insights</span>
+                <span className="pill">News & Macro</span>
+                <span className="pill">Strategy</span>
+                <span className="pill">Community</span>
+              </div>
+            </div>
+
+            {/* HERO MOCKUP CARD */}
+            <div className="hero-mockup">
+              <div className="float-card float-top">
+                <div style={{ fontSize: '11px', color: '#10b981', fontWeight: 700, marginBottom: '4px' }}>
+                  ⚡ MACRO NEWS AI
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
+                  CPI data cooling. Expect USD weakness.
+                </div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Just now</div>
+              </div>
+
+              <div className="float-card float-bottom">
+                <div style={{ fontSize: '12px', color: '#10b981', fontWeight: 700 }}>
+                  🎯 PSYCHOLOGY ALERT
+                </div>
+                <div style={{ fontSize: '13px', color: '#f8fafc', marginTop: '4px', fontWeight: 600 }}>
+                  Excellent Discipline Today
+                </div>
+                <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+                  You followed your mechanical edge perfectly.
+                </div>
+              </div>
+
+              <div className="dashboard-header">
+                <span>Terminal Overview</span>
+                <span>Active Session</span>
+              </div>
+
+              <div style={{ padding: '24px 0', textAlign: 'center' }}>
+                <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '8px' }}>NET P&L (THIS MONTH)</div>
+                <div style={{ fontSize: '42px', fontWeight: 800, color: '#10b981' }}>+$14,250.00</div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginTop: '24px' }}>
+                  <div style={{ background: '#1e293b', padding: '12px', borderRadius: '10px' }}>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>WIN RATE</div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>68.4%</div>
+                  </div>
+                  <div style={{ background: '#1e293b', padding: '12px', borderRadius: '10px' }}>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>PROFIT FACTOR</div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>2.84</div>
+                  </div>
+                  <div style={{ background: '#1e293b', padding: '12px', borderRadius: '10px' }}>
+                    <div style={{ fontSize: '11px', color: '#94a3b8' }}>ACTIVE EDGE</div>
+                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>SMC Setup</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        </div>
+      </section>
 
-          <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white max-w-4xl mx-auto leading-tight">
-            The Trading Journal That Tells You <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-600">How to Win.</span>
-          </h1>
-
-          <p className="text-sm sm:text-base text-neutral-400 max-w-2xl mx-auto font-sans leading-relaxed">
-            Stop trading on emotion. VALT SYS inspects win-rates, risk leakage, execution flaws, and guides your daily decision-making with institutional precision.
+      {/* HUB SECTION (DYNAMIC TABS) */}
+      <section className="hub-section">
+        <div className="container">
+          <div className="section-tag">
+            <span></span> YOUR TOOLKIT
+          </div>
+          <h2 className="section-title">
+            Seven products. <span className="grad-text">One hub.</span>
+          </h2>
+          <p className="section-sub">
+            Everything you need to analyze the market, track your psychology, and execute your edge.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4">
-            <Link 
-              href="/dashboard" 
-              className="w-full sm:w-auto text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-3.5 rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2"
-            >
-              Explore Dashboard <ArrowRight className="w-4 h-4" />
-            </Link>
-            <a 
-              href="#features" 
-              className="w-full sm:w-auto text-xs font-semibold bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-800 px-6 py-3.5 rounded-xl transition-all"
-            >
-              Guide Tour
-            </a>
-          </div>
-
-          {/* TOP FEATURE PREVIEW CARDS */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-12 text-left w-full">
-            <div className="bg-[#0B0B0B] border border-neutral-800/80 p-5 rounded-2xl relative overflow-hidden hover:border-emerald-500/50 transition-colors">
-              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3 text-emerald-400">
-                <Bot className="w-5 h-5" />
-              </div>
-              <h3 className="text-sm font-bold text-white mb-1">Meet Cypher AI</h3>
-              <p className="text-xs text-neutral-400 leading-relaxed">Your personal AI trading psychologist & execution inspector.</p>
-            </div>
-
-            <div className="bg-[#0B0B0B] border border-neutral-800/80 p-5 rounded-2xl relative overflow-hidden hover:border-emerald-500/50 transition-colors">
-              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3 text-emerald-400">
-                <Activity className="w-5 h-5" />
-              </div>
-              <h3 className="text-sm font-bold text-white mb-1">Backtest Simulator</h3>
-              <p className="text-xs text-neutral-400 leading-relaxed">Replay market price action and validate your edge risk-free.</p>
-            </div>
-
-            <div className="bg-[#0B0B0B] border border-neutral-800/80 p-5 rounded-2xl relative overflow-hidden hover:border-emerald-500/50 transition-colors">
-              <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-3 text-emerald-400">
-                <BarChart3 className="w-5 h-5" />
-              </div>
-              <h3 className="text-sm font-bold text-white mb-1">Smart Analytics</h3>
-              <p className="text-xs text-neutral-400 leading-relaxed">Deep insights into MFE/MAE, hourly win-rate, and R:R ratios.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* 3. INTERACTIVE FEATURE TABS */}
-        <section id="features" className="py-16 border-t border-neutral-900 w-full">
-          <div className="text-center space-y-2 mb-12">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-emerald-400">System Architecture</span>
-            <h2 className="text-2xl sm:text-4xl font-bold text-white">Elevate Your Trading Strategy</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start w-full">
-            <div className="space-y-3">
+          <div className="hub-tabs">
+            {Object.keys(hubTabsData).map((tabName) => (
               <button
-                onClick={() => setActiveTab("identify")}
-                className={`w-full text-left p-4 rounded-xl border transition-all ${
-                  activeTab === "identify"
-                    ? "bg-neutral-900 border-emerald-500 text-white shadow-lg"
-                    : "bg-black border-neutral-800/80 text-neutral-400 hover:border-neutral-700"
-                }`}
+                key={tabName}
+                className={`tab-btn ${activeTab === tabName ? 'active' : ''}`}
+                onClick={() => setActiveTab(tabName)}
               >
-                <span className="text-xs font-bold uppercase tracking-wider block mb-1">01. Identify & Plan</span>
-                <p className="text-xs">Uncover your true trading edge and build a winning strategy playbook.</p>
+                {tabName}
               </button>
-
-              <button
-                onClick={() => setActiveTab("optimize")}
-                className={`w-full text-left p-4 rounded-xl border transition-all ${
-                  activeTab === "optimize"
-                    ? "bg-neutral-900 border-emerald-500 text-white shadow-lg"
-                    : "bg-black border-neutral-800/80 text-neutral-400 hover:border-neutral-700"
-                }`}
-              >
-                <span className="text-xs font-bold uppercase tracking-wider block mb-1">02. Optimize & Practice</span>
-                <p className="text-xs">Replay historical chart data with our realistic market simulator.</p>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("protect")}
-                className={`w-full text-left p-4 rounded-xl border transition-all ${
-                  activeTab === "protect"
-                    ? "bg-neutral-900 border-emerald-500 text-white shadow-lg"
-                    : "bg-black border-neutral-800/80 text-neutral-400 hover:border-neutral-700"
-                }`}
-              >
-                <span className="text-xs font-bold uppercase tracking-wider block mb-1">03. Protect & Refine</span>
-                <p className="text-xs">Manage risk parameters and eliminate emotional drawdown leaks.</p>
-              </button>
-            </div>
-
-            <div className="md:col-span-2 bg-[#0B0B0B] border border-neutral-800 p-6 rounded-2xl min-h-[280px] flex flex-col justify-between">
-              {activeTab === "identify" && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono uppercase">
-                    <TrendingUp className="w-4 h-4" /> Advanced Performance Tracking
-                  </div>
-                  <h3 className="text-xl font-bold text-white">Uncover Your Trading Edge</h3>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    Detailed analytics evaluate win rate across timeframes, asset classes (XAUUSD, Forex, Crypto), and session setups to show exactly where your profit comes from.
-                  </p>
-                </div>
-              )}
-
-              {activeTab === "optimize" && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono uppercase">
-                    <History className="w-4 h-4" /> Market Replay Engine
-                  </div>
-                  <h3 className="text-xl font-bold text-white">Gain 1 Year of Experience in 1 Hour</h3>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    Practice trading strategies risk-free using tick-by-tick market replay. Test SMC/ICT order blocks before risking capital.
-                  </p>
-                </div>
-              )}
-
-              {activeTab === "protect" && (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono uppercase">
-                    <ShieldCheck className="w-4 h-4" /> Automated Risk Management
-                  </div>
-                  <h3 className="text-xl font-bold text-white">Secure Your Capital & Manage Drawdown</h3>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    Set hard max daily loss limits and position sizing rules. Cypher Coach alerts you immediately if you start revenge trading.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* 4. CYPHER AI SECTION */}
-        <section id="cypher" className="py-16 border-t border-neutral-900 w-full">
-          <div className="bg-gradient-to-b from-[#0B0B0B] to-black border border-neutral-800 p-8 rounded-3xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-mono text-emerald-400">
-                <BrainCircuit className="w-3.5 h-3.5" /> Cypher AI Assistant
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-white">
-                Your Personal AI Trading Coach
-              </h2>
-              <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
-                Cypher analyzes every trade log in real-time. Ask questions like <span className="text-white font-mono">"Why am I losing on Mondays?"</span> to receive instant answers.
-              </p>
-              <ul className="space-y-2 text-xs font-mono text-neutral-300">
-                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Automated Trade Flaw Inspection</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Risk & Reward Leakage Analysis</li>
-              </ul>
-            </div>
-
-            <div className="bg-black border border-neutral-800 rounded-2xl p-4 font-mono text-xs space-y-3 shadow-2xl">
-              <div className="flex items-center justify-between border-b border-neutral-800 pb-2 text-[10px] text-neutral-500">
-                <span>CYPHER AI AUDIT</span>
-                <span className="text-emerald-400">ACTIVE SESSION</span>
-              </div>
-              <div className="bg-neutral-900/80 p-3 rounded-lg border border-neutral-800 text-neutral-300">
-                <p className="text-emerald-400 font-bold mb-1">💡 Execution Warning:</p>
-                <p className="text-[11px] text-neutral-400">"Your last 3 XAUUSD trades were executed outside NY Killzone hours, resulting in 65% higher slippage."</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 5. REVIEWS */}
-        <section id="reviews" className="py-16 border-t border-neutral-900 w-full">
-          <div className="text-center space-y-2 mb-12">
-            <span className="text-[11px] font-mono uppercase tracking-widest text-emerald-400">Trader Feedback</span>
-            <h2 className="text-2xl sm:text-4xl font-bold text-white">Hear From Funded Traders</h2>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { name: "Prop Trader Alex", role: "Gold & Forex Scalper", review: "VALT SYS transformed my risk management. Cypher caught my overtrading habit." },
-              { name: "SMC Trader Rahil", role: "Indices & XAUUSD", review: "The MFE/MAE analysis gave me the exact confidence to hold my winning trades." },
-              { name: "Quant Trader Elena", role: "Crypto & Futures", review: "Cleanest trading dashboard on the market. The backtest simulator is blazingly fast." }
-            ].map((item, i) => (
-              <div key={i} className="bg-[#0B0B0B] border border-neutral-800 p-5 rounded-2xl space-y-3">
-                <div className="flex gap-1 text-emerald-400">
-                  {Array.from({ length: 5 }).map((_, idx) => (
-                    <Star key={idx} className="w-3.5 h-3.5 fill-emerald-400" />
-                  ))}
-                </div>
-                <p className="text-xs text-neutral-300 leading-relaxed font-sans">"{item.review}"</p>
-                <div>
-                  <span className="text-xs font-bold text-white block">{item.name}</span>
-                  <span className="text-[10px] text-neutral-500 font-mono">{item.role}</span>
-                </div>
-              </div>
             ))}
           </div>
-        </section>
 
-      </main>
+          <div className="feature-hero-card">
+            <div>
+              <div style={{ color: '#10b981', fontWeight: 700, fontSize: '12px', letterSpacing: '0.05em', marginBottom: '12px' }}>
+                {currentTabData.tag}
+              </div>
+              <h3 style={{ fontSize: '32px', fontWeight: 800, lineHeight: 1.2, marginBottom: '16px', color: '#fff' }}>
+                {currentTabData.title}
+              </h3>
+              <p style={{ color: '#94a3b8', fontSize: '15px', lineHeight: 1.6, marginBottom: '24px' }}>
+                {currentTabData.description}
+              </p>
 
-      {/* 6. FOOTER */}
-      <footer className="border-t border-neutral-900 bg-black py-10 px-4 w-full">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="space-y-1 text-center md:text-left">
-            <span className="text-sm font-black font-mono tracking-widest text-emerald-400 uppercase">VALT SYS</span>
-            <p className="text-[11px] text-neutral-500">Institutional AI Trading Journal & Execution Platform</p>
+              <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px', fontWeight: 600 }}>
+                {currentTabData.bullets.map((bullet, idx) => (
+                  <li key={idx} style={{ color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#10b981' }}>✓</span> {bullet}
+                  </li>
+                ))}
+              </ul>
+
+              <button className="btn-gradient" style={{ marginTop: '28px', padding: '12px 24px', fontSize: '14px' }}>
+                Launch Module →
+              </button>
+            </div>
+
+            {/* DYNAMIC VISUAL MOCKUP BASED ON SELECTED TAB */}
+            <div style={{ background: '#06090e', borderRadius: '16px', padding: '24px', color: '#fff', border: '1px solid #1e293b', minHeight: '320px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              
+              {currentTabData.visualType === 'overview' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ background: '#0d131f', padding: '24px', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                    <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 700, letterSpacing: '0.05em' }}>NET P&L (THIS MONTH)</div>
+                    <div style={{ fontSize: '38px', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>+$14,250.00</div>
+                    
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                      <div style={{ flex: 1, background: '#1e293b', padding: '12px', borderRadius: '8px' }}>
+                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>WIN RATE</div>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff', marginTop: '2px' }}>68.4%</div>
+                      </div>
+                      <div style={{ flex: 1, background: '#1e293b', padding: '12px', borderRadius: '8px' }}>
+                        <div style={{ fontSize: '11px', color: '#94a3b8' }}>PROFIT FACTOR</div>
+                        <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff', marginTop: '2px' }}>2.84</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', color: '#bfdbfe', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span>⚡</span> <span><strong>System Status:</strong> All proprietary and personal accounts synced perfectly.</span>
+                  </div>
+                </div>
+              )}
+
+              {currentTabData.visualType === 'journal' && (
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px', fontSize: '12px', color: '#94a3b8' }}>
+                    <span>Live Trade Feed</span>
+                    <span style={{ color: '#10b981' }}>● Auto Sync Active</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ background: '#0d131f', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 700 }}>XAUUSD <span style={{ color: '#10b981', fontSize: '12px', marginLeft: '6px' }}>BUY</span></div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Smart Money Concept / FVG</div>
+                      </div>
+                      <span style={{ color: '#10b981', fontWeight: 700, fontSize: '16px' }}>+$840.00</span>
+                    </div>
+                    <div style={{ background: '#0d131f', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 700 }}>EURUSD <span style={{ color: '#ef4444', fontSize: '12px', marginLeft: '6px' }}>SELL</span></div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Liquidity Sweep</div>
+                      </div>
+                      <span style={{ color: '#ef4444', fontWeight: 700, fontSize: '16px' }}>-$320.00</span>
+                    </div>
+                    <div style={{ background: '#0d131f', padding: '14px', borderRadius: '8px', border: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <div style={{ fontSize: '14px', fontWeight: 700 }}>GBPUSD <span style={{ color: '#10b981', fontSize: '12px', marginLeft: '6px' }}>BUY</span></div>
+                        <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>Order Block Retest</div>
+                      </div>
+                      <span style={{ color: '#10b981', fontWeight: 700, fontSize: '16px' }}>+$1,125.50</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentTabData.visualType === 'chart' && (
+                <div style={{ height: '240px', background: '#0d131f', borderRadius: '12px', border: '1px solid #1e293b', position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 12, left: 16, fontSize: '14px', fontWeight: 700, color: '#fff' }}>XAUUSD <span style={{ color: '#94a3b8', fontWeight: 400, marginLeft: '4px' }}>15m</span></div>
+                  <div style={{ position: 'absolute', top: 12, right: 16, fontSize: '11px', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(16,185,129,0.2)' }}>● LIVE DATA</div>
+                  
+                  {/* Candlesticks Mockup */}
+                  <div style={{ position: 'absolute', bottom: '30%', left: '15%', width: '12px', height: '25%', background: '#ef4444', borderRadius: '2px' }}></div>
+                  <div style={{ position: 'absolute', bottom: '20%', left: '25%', width: '12px', height: '40%', background: '#10b981', borderRadius: '2px' }}></div>
+                  <div style={{ position: 'absolute', bottom: '45%', left: '35%', width: '12px', height: '35%', background: '#10b981', borderRadius: '2px' }}></div>
+                  <div style={{ position: 'absolute', bottom: '65%', left: '45%', width: '12px', height: '20%', background: '#10b981', borderRadius: '2px' }}></div>
+                  <div style={{ position: 'absolute', bottom: '75%', left: '55%', width: '12px', height: '15%', background: '#ef4444', borderRadius: '2px' }}></div>
+                  <div style={{ position: 'absolute', bottom: '50%', left: '65%', width: '12px', height: '30%', background: '#ef4444', borderRadius: '2px' }}></div>
+                  <div style={{ position: 'absolute', bottom: '40%', left: '75%', width: '12px', height: '45%', background: '#10b981', borderRadius: '2px' }}></div>
+                  
+                  {/* SMC Annotations */}
+                  <div style={{ position: 'absolute', bottom: '45%', left: '25%', width: '20%', height: '20%', background: 'rgba(59, 130, 246, 0.15)', border: '1px dashed #3b82f6' }}></div>
+                  <div style={{ position: 'absolute', bottom: '48%', left: '27%', fontSize: '11px', color: '#60a5fa', fontWeight: 700 }}>FVG</div>
+
+                  <div style={{ position: 'absolute', bottom: '65%', left: '45%', width: '25%', borderTop: '2px solid #eab308' }}></div>
+                  <div style={{ position: 'absolute', bottom: '68%', left: '50%', fontSize: '11px', color: '#facc15', fontWeight: 700 }}>BOS / LIQUIDITY</div>
+                </div>
+              )}
+
+              {currentTabData.visualType === 'ai' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#10b981', marginBottom: '4px' }}>
+                    🤖 Volt AI Leak Detector
+                  </div>
+                  <div style={{ background: '#0d131f', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b', fontSize: '14px', lineHeight: 1.5 }}>
+                    "You took 3 trades tagged with <strong>'Early Entry'</strong> today. You are consistently entering positions 2 minutes before the hourly close. Waiting for the candle to close could improve your win rate by 14%."
+                  </div>
+                  <div style={{ background: '#1e293b', padding: '16px', borderRadius: '10px', border: '1px solid #334155', fontSize: '14px', lineHeight: 1.5 }}>
+                    "Your psychological tilt is usually triggered after a -$200 loss. I suggest implementing a hard 15-minute screen lock when this threshold is hit."
+                  </div>
+                </div>
+              )}
+
+              {currentTabData.visualType === 'news' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ background: '#0d131f', padding: '18px', borderRadius: '10px', border: '1px solid #1e293b' }}>
+                    <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 700, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ display: 'inline-block', width: '8px', height: '8px', background: '#ef4444', borderRadius: '50%' }}></span> HIGH IMPACT MACRO
+                    </div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff' }}>US CPI Data Release (YoY)</div>
+                    <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '6px' }}>Actual: 3.1% | Forecast: 3.2%</div>
+                  </div>
+                  <div style={{ background: 'rgba(16, 185, 129, 0.1)', padding: '18px', borderRadius: '10px', border: '1px solid rgba(16,185,129,0.2)' }}>
+                    <div style={{ fontSize: '12px', color: '#10b981', fontWeight: 700, marginBottom: '8px' }}>🤖 AI IMPACT ANALYSIS ON USD/GOLD</div>
+                    <div style={{ fontSize: '14px', color: '#ecfdf5', lineHeight: 1.6 }}>
+                      Lower-than-expected CPI weakens the USD. Expect strong upward momentum on Gold (XAUUSD) as institutional algorithms re-price inflation expectations. Watch for a liquidity sweep at key resistance before continuation.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentTabData.visualType === 'strategy' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#94a3b8', marginBottom: '8px' }}>
+                    <span>Active Playbook Performance</span>
+                    <span style={{ color: '#10b981', fontWeight: 700 }}>+4.2% This Month</span>
+                  </div>
+                  <div style={{ background: '#0d131f', padding: '16px', borderRadius: '8px', border: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>SMC Silver Bullet</div>
+                      <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>42 Executions tracked</div>
+                    </div>
+                    <div style={{ fontSize: '20px', color: '#10b981', fontWeight: 800 }}>68% WR</div>
+                  </div>
+                  <div style={{ background: '#0d131f', padding: '16px', borderRadius: '8px', border: '1px solid #1e293b', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>COT Report Alignment</div>
+                      <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>14 Executions tracked</div>
+                    </div>
+                    <div style={{ fontSize: '20px', color: '#10b981', fontWeight: 800 }}>78% WR</div>
+                  </div>
+                </div>
+              )}
+
+              {currentTabData.visualType === 'community' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#10b981', marginBottom: '4px' }}>
+                    💬 Trading Psychology Lounge
+                  </div>
+                  <div style={{ background: '#0d131f', padding: '16px', borderRadius: '10px', border: '1px solid #1e293b', fontSize: '14px', color: '#94a3b8', lineHeight: 1.5 }}>
+                    <strong style={{ color: '#fff' }}>You:</strong> Caught myself revenge trading after that early stop-out on the Gold long. Going to step away for the session.
+                  </div>
+                  <div style={{ background: '#1e293b', padding: '16px', borderRadius: '10px', border: '1px solid #334155', fontSize: '14px', color: '#e2e8f0', marginLeft: '24px', lineHeight: 1.5 }}>
+                    <strong style={{ color: '#60a5fa' }}>Jay:</strong> Good awareness. The setup wasn't fully there anyway, price action is choppy waiting for the macro drop. Go take a walk.
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex gap-6 text-xs font-mono text-neutral-400">
-            <Link href="/dashboard" className="hover:text-white">Dashboard</Link>
-            <a href="#features" className="hover:text-white">Features</a>
-            <a href="#cypher" className="hover:text-white">Cypher AI</a>
+        </div>
+      </section>
+
+      {/* DARK SECTION: VOLT AI COACH */}
+      <section className="dark-coach-section">
+        <div className="container">
+          <div style={{ textAlign: 'center' }}>
+            <div className="section-tag">
+              <span></span> VOLT AI
+            </div>
+            <h2 className="section-title">
+              Your personal <span className="grad-text">trading psychologist.</span>
+            </h2>
+            <p className="section-sub">
+              Trained on institutional execution metrics. Knows your behavioral patterns better than you do. Master your mindset.
+            </p>
           </div>
-          <span className="text-[10px] font-mono text-neutral-600">© 2026 VALT SYS. All Rights Reserved.</span>
+
+          <div className="coach-grid">
+            <div className="chat-box">
+              <div style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 700, letterSpacing: '0.05em' }}>
+                LIVE AI DIAGNOSIS
+              </div>
+              <div className="chat-msg msg-user">
+                Why did I bleed profits on Gold last week?
+              </div>
+              <div className="chat-msg msg-ai">
+                You took 4 revenge trades within 3 minutes of stopping out. Each averaged a -$420 loss. That’s 73% of last week's drawdown originating from the same psychological tilt pattern.
+              </div>
+              <div className="chat-msg msg-user">
+                What rule should I set to fix this?
+              </div>
+              <div className="chat-msg msg-ai">
+                Enforce a mandatory 15-minute cool-down lock after any -$200 loss. Traders with similar behavioral profiles cut their drawdown by 38% after implementing this strict rule.
+              </div>
+            </div>
+
+            <div className="pattern-cards">
+              <div className="pattern-card">
+                <div className="pattern-icon" style={{ background: '#064e3b', color: '#10b981' }}>🕒</div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>TIME OF DAY FILTER</div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, marginTop: '2px', color: '#fff' }}>
+                    You lose <span style={{ color: '#ef4444' }}>62%</span> of trades placed after 2:30 PM EST.
+                  </div>
+                </div>
+              </div>
+
+              <div className="pattern-card">
+                <div className="pattern-icon" style={{ background: '#831843', color: '#f43f5e' }}>⚠️</div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>BEHAVIOR DETECTED</div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, marginTop: '2px', color: '#fff' }}>
+                    Revenge trades cost you <span style={{ color: '#ef4444' }}>$4,420</span> this quarter.
+                  </div>
+                </div>
+              </div>
+
+              <div className="pattern-card">
+                <div className="pattern-icon" style={{ background: '#064e3b', color: '#10b981' }}>🎯</div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 700 }}>BEST EDGE IDENTIFIED</div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, marginTop: '2px', color: '#fff' }}>
+                    Strongest setup: <span style={{ color: '#10b981' }}>SMC Fair Value Gap retests</span>.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* NUMBERED STEPS SECTIONS */}
+      <section className="step-section">
+        <div className="big-number">1</div>
+        <div className="container">
+          <div className="step-header">
+            <div style={{ color: '#10b981', fontWeight: 700, fontSize: '12px', letterSpacing: '0.05em', marginBottom: '8px' }}>
+              SEAMLESS CONNECTIONS
+            </div>
+            <h2 style={{ fontSize: '42px', fontWeight: 800, color: '#fff' }}>
+              Powerful and Automated <br />
+              <span className="grad-text">Data Syncing</span>
+            </h2>
+            <p style={{ color: '#94a3b8', marginTop: '12px', fontSize: '18px' }}>
+              Connect your favorite platforms. We pull the data silently in the background while you focus on the charts.
+            </p>
+          </div>
+
+          <div className="three-cards-grid">
+            <div className="gradient-feature-card card-bg-1">
+              <div>
+                <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px' }}>Broker API Integrations</h3>
+                <p style={{ fontSize: '15px', opacity: 0.8, lineHeight: 1.6 }}>
+                  Direct API connections to MetaTrader 4, MetaTrader 5, and top-tier brokerages. Instant fills flowing straight into your journal.
+                </p>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.08)', padding: '16px', borderRadius: '12px', fontSize: '13px', color: '#10b981' }}>
+                ✓ 500+ Platforms Supported
+              </div>
+            </div>
+
+            <div className="gradient-feature-card card-bg-2">
+              <div>
+                <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px' }}>Prop Firm Monitoring</h3>
+                <p style={{ fontSize: '15px', opacity: 0.8, lineHeight: 1.6 }}>
+                  Track your evaluation challenges and funded accounts. Get live alerts before you hit daily drawdown limits.
+                </p>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.08)', padding: '16px', borderRadius: '12px', fontSize: '13px', color: '#10b981' }}>
+                ✓ Real-time Rule Checking
+              </div>
+            </div>
+
+            <div className="gradient-feature-card card-bg-3">
+              <div>
+                <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '12px' }}>Cloud Performance</h3>
+                <p style={{ fontSize: '15px', opacity: 0.8, lineHeight: 1.6 }}>
+                  Built for speed. No heavy background processes that lag your PC during screen recording. Fully optimized for tablet analysis.
+                </p>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.08)', padding: '16px', borderRadius: '12px', fontSize: '13px', color: '#10b981' }}>
+                ✓ Zero System Lag
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER CTA */}
+      <footer className="footer-cta">
+        <div className="container">
+          <h2 style={{ fontSize: '48px', fontWeight: 800, marginBottom: '20px' }}>
+            Ready to master your edge?
+          </h2>
+          <p style={{ fontSize: '20px', opacity: 0.9, marginBottom: '36px', maxWidth: '600px', margin: '0 auto 36px' }}>
+            Join ambitious traders taking control of their psychology and data with VOLT TERMINAL.
+          </p>
+          <button style={{ background: '#06090e', color: '#fff', fontSize: '16px', fontWeight: 700, padding: '16px 40px', borderRadius: '9999px', border: 'none', cursor: 'pointer', boxShadow: '0 10px 25px rgba(0,0,0,0.3)', transition: 'transform 0.2s' }}>
+            Launch VOLT Explorer
+          </button>
         </div>
       </footer>
-
     </div>
   );
 }
