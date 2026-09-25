@@ -16,7 +16,8 @@ import {
   X,
   Newspaper,
   AlertTriangle,
-  Info
+  Info,
+  History // <- Added History icon for Backtest
 } from "lucide-react";
 
 // 1. Global Confirm & Alert Context Setup
@@ -40,7 +41,8 @@ const navTabs = [
   { name: "Journal", href: "/dashboard/journal", icon: BookOpen },
   { name: "Analytics", href: "/dashboard/analytics", icon: BarChart2 },
   { name: "Live Chart", href: "/dashboard/chart", icon: LineChart },
-   { name: "News", href: "/dashboard/news", icon: Newspaper },
+  { name: "Backtest", href: "/dashboard/backtest", icon: History }, // <- Added Backtest Tab
+  { name: "News", href: "/dashboard/news", icon: Newspaper },
   { name: "Community", href: "/dashboard/community", icon: Users },
   { name: "Strategy", href: "/dashboard/strategy", icon: Layers },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },

@@ -2,25 +2,24 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/utils/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
   
-  // Use our SSR client helper which writes authentication tokens directly to browser cookies
+  // Use SSR client helper
   const supabase = createClient();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [signupNotice, setSignupNotice] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorMessage(null);
-    setSignupNotice(null);
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -35,7 +34,6 @@ export default function LoginPage() {
       }
 
       if (data?.user) {
-        // Hard redirect to clear page cache and force Next.js Middleware to evaluate session cookies
         window.location.href = "/dashboard";
       }
     } catch (err: any) {
@@ -44,17 +42,11 @@ export default function LoginPage() {
     }
   };
 
-  const handleSignupClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setErrorMessage(null);
-    setSignupNotice(
-      "To get an account and complete your payment, please contact our team on WhatsApp at 6306217843 or message on Telegram at @frxabhinab."
-    );
-  };
-
   return (
-    <div className="min-h-screen w-screen bg-black flex items-center justify-center p-4">
+    <div className="min-h-screen w-screen bg-[#050505] flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-[#0B0B0B] border border-neutral-800 rounded-2xl p-6 sm:p-8 space-y-6 shadow-2xl">
+        
+        {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-xl font-bold text-emerald-400 tracking-wide font-mono uppercase">
             Valt Terminal Login
@@ -69,14 +61,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Signup / Payment Notice Box */}
-        {signupNotice && (
-          <div className="p-3.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs text-center space-y-1.5 animate-fadeIn">
-            <p className="font-bold uppercase tracking-wider">Account Creation & Payment</p>
-            <p className="text-neutral-300 leading-relaxed">{signupNotice}</p>
-          </div>
-        )}
-
+        {/* Login Form */}
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
             <label className="block text-xs font-mono text-neutral-400 mb-1">
@@ -115,18 +100,19 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Sign Up Link Section */}
-        <div className="text-center pt-2 border-t border-neutral-900/80">
+        {/* Direct Payment Redirect Button */}
+        <div className="text-center pt-3 border-t border-neutral-900/80 space-y-2">
           <p className="text-xs text-neutral-400">
-            Don’t have an account?{" "}
-            <button 
-              onClick={handleSignupClick}
-              className="text-emerald-400 hover:text-emerald-300 font-semibold underline underline-offset-4 cursor-pointer bg-transparent border-none p-0 inline-block"
-            >
-              Sign up
-            </button>
+            Don’t have an account yet?
           </p>
+          <Link 
+            href="/pricing"
+            className="w-full inline-block text-center bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-emerald-400 font-semibold text-xs py-2.5 rounded-lg transition-all active:scale-[0.98]"
+          >
+            Create Account / Pay Subscription
+          </Link>
         </div>
+
       </div>
     </div>
   );

@@ -571,9 +571,18 @@ export default function VoltLandingExplorer() {
           color: #10b981;
         }
 
+        /* MOBILE FIXES */
         @media (max-width: 900px) {
-          .hero-grid, .feature-hero-card, .coach-grid, .three-cards-grid, .footer-grid {
+          .hero-grid, .coach-grid, .three-cards-grid, .footer-grid {
             grid-template-columns: 1fr;
+          }
+          /* FIX: Ensures the 'Seven Products' card stacks perfectly and doesn't cut off horizontally */
+          .feature-hero-card {
+            grid-template-columns: 1fr;
+            padding: 32px 20px; 
+            gap: 32px;
+            width: 100%;
+            overflow: hidden;
           }
           .hero-title { font-size: 40px; }
           .big-number { font-size: 100px; }
@@ -596,7 +605,7 @@ export default function VoltLandingExplorer() {
             </ul>
             <div className="nav-actions">
               <button className="btn-link" onClick={() => router.push('/login')}>Log In</button>
-              <button className="btn-gradient" onClick={() => router.push('/login')}>Get Started ›</button>
+              <button className="btn-gradient" onClick={() => router.push('/pricing')}>Sign Up ›</button>
             </div>
           </nav>
         </div>
@@ -625,13 +634,15 @@ export default function VoltLandingExplorer() {
                 <span style={{ fontSize: '12px', fontWeight: 700, color: '#10b981', width: '100%', letterSpacing: '0.05em' }}>
                   YOUR TOOLS
                 </span>
-                <span className="pill active">• Overview</span>
+                <span className="pill">Overview</span>
                 <span className="pill">Journal</span>
                 <span className="pill">Live Chart</span>
                 <span className="pill">AI Insights</span>
                 <span className="pill">News & Macro</span>
                 <span className="pill">Strategy</span>
                 <span className="pill">Community</span>
+                <span className="pill">Backtesting</span>
+
               </div>
             </div>
 
@@ -739,7 +750,7 @@ export default function VoltLandingExplorer() {
             </div>
 
             {/* DYNAMIC VISUAL MOCKUP BASED ON SELECTED TAB */}
-            <div style={{ background: '#06090e', borderRadius: '16px', padding: '24px', color: '#fff', border: '1px solid #1e293b', minHeight: '320px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ background: '#06090e', borderRadius: '16px', padding: '20px', color: '#fff', border: '1px solid #1e293b', minHeight: '320px', display: 'flex', flexDirection: 'column', justifyContent: 'center', width: '100%', overflow: 'hidden' }}>
               
               {currentTabData.visualType === 'overview' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
@@ -747,18 +758,18 @@ export default function VoltLandingExplorer() {
                     <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 700, letterSpacing: '0.05em' }}>NET P&L (THIS MONTH)</div>
                     <div style={{ fontSize: '38px', fontWeight: 800, color: '#10b981', marginTop: '4px' }}>+$14,250.00</div>
                     
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
-                      <div style={{ flex: 1, background: '#1e293b', padding: '12px', borderRadius: '8px' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginTop: '20px' }}>
+                      <div style={{ flex: 1, minWidth: '120px', background: '#1e293b', padding: '12px', borderRadius: '8px' }}>
                         <div style={{ fontSize: '11px', color: '#94a3b8' }}>WIN RATE</div>
                         <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff', marginTop: '2px' }}>68.4%</div>
                       </div>
-                      <div style={{ flex: 1, background: '#1e293b', padding: '12px', borderRadius: '8px' }}>
+                      <div style={{ flex: 1, minWidth: '120px', background: '#1e293b', padding: '12px', borderRadius: '8px' }}>
                         <div style={{ fontSize: '11px', color: '#94a3b8' }}>PROFIT FACTOR</div>
                         <div style={{ fontSize: '16px', fontWeight: 700, color: '#fff', marginTop: '2px' }}>2.84</div>
                       </div>
                     </div>
                   </div>
-                  <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', color: '#bfdbfe', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '12px 16px', borderRadius: '8px', fontSize: '13px', color: '#bfdbfe', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                     <span>⚡</span> <span><strong>System Status:</strong> Excellent execution! Your Win Rate is 68.4% with a strong Profit Factor of 4.5. Your edge is robust.</span>
                   </div>
                 </div>
