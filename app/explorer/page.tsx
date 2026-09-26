@@ -2721,7 +2721,7 @@ export default function VoltLandingExplorer() {
                   whileTap={{ scale: 0.98 }}
                   onClick={() => router.push("/pricing")}
                 >
-                  Start Free
+Sign Up
                 </motion.button>
                 <button
                   className="mobile-toggle"
