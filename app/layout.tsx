@@ -12,8 +12,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className="bg-[#050505] text-slate-100 min-h-screen flex antialiased selection:bg-cyan-500/20 selection:text-cyan-400">
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body 
+        className="bg-[#050505] text-slate-100 min-h-screen flex antialiased selection:bg-cyan-500/20 selection:text-cyan-400"
+        suppressHydrationWarning
+      >
         <div className="flex-1 flex w-full min-h-screen overflow-x-hidden">
           {children}
         </div>
