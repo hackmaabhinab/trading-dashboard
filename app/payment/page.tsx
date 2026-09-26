@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle2, ShieldCheck, Copy, ArrowRight, Lock, User, Mail, Hash, PhoneCall, IndianRupee } from 'lucide-react';
 import Link from 'next/link';
 
-export default function PaymentPage() {
+function PaymentContent() {
   const searchParams = useSearchParams();
 
   // Read selected plan & amount dynamically from URL query parameters
@@ -320,5 +320,19 @@ const handleSubmit = async (e: React.FormEvent) => {
 
       </div>
     </div>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen w-full bg-[#050505] text-white flex items-center justify-center p-6">
+          <div className="text-sm text-[#787b86]">Loading secure payment...</div>
+        </div>
+      }
+    >
+      <PaymentContent />
+    </Suspense>
   );
 }
