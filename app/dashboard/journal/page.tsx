@@ -1,15 +1,122 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import EditTradeModal from "@/components/EditTradeModal";
 import { 
   Edit2, RefreshCw, PlusCircle, X, Calendar, Clock, 
   ChevronLeft, ChevronRight, Trash2, BookOpen, Check, ChevronDown, Filter
 } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
-import { useConfirm } from "@/app/dashboard/layout";
+import { createClient } from "../../../utils/supabase/client";
+import { useConfirm } from "../layout";
 
 const supabase = createClient();
+
+type EditTradeModalProps = {
+  trade: any;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (updatedData: any) => void;
+};
+
+function EditTradeModal({ trade, isOpen, onClose, onSave }: EditTradeModalProps) {
+  const [formData, setFormData] = useState<any>(trade || {});
+
+  useEffect(() => {
+    setFormData(trade || {});
+  }, [trade]);
+
+  if (!isOpen) return null;
+
+  const updateField = (field: string, value: any) => {
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div className="w-full max-w-lg bg-[#0B0B0B] border border-emerald-500/30 rounded-2xl p-6 space-y-4 shadow-[0_0_35px_rgba(16,185,129,0.15)]">
+        <div className="flex items-center justify-between border-b border-neutral-800 pb-3">
+          <h2 className="text-sm font-extrabold text-emerald-400 uppercase tracking-wider">Edit Trade</h2>
+          <button onClick={onClose} className="text-neutral-500 hover:text-white transition-colors">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-extrabold text-neutral-200 mb-1">Symbol</label>
+              <input
+                value={formData.symbol || ""}
+                onChange={(e) => updateField("symbol", e.target.value)}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2.5 text-xs font-extrabold text-white focus:border-emerald-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-extrabold text-neutral-200 mb-1">Type</label>
+              <input
+                value={formData.trade_type || ""}
+                onChange={(e) => updateField("trade_type", e.target.value)}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2.5 text-xs font-extrabold text-white focus:border-emerald-500 outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-[11px] font-extrabold text-neutral-200 mb-1">Profit</label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.profit ?? ""}
+                onChange={(e) => updateField("profit", Number(e.target.value))}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2.5 text-xs font-extrabold text-white focus:border-emerald-500 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-extrabold text-neutral-200 mb-1">Strategy</label>
+              <input
+                value={formData.strategy || ""}
+                onChange={(e) => updateField("strategy", e.target.value)}
+                className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2.5 text-xs font-extrabold text-white focus:border-emerald-500 outline-none"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-extrabold text-neutral-200 mb-1">Notes</label>
+            <textarea
+              rows={3}
+              value={formData.notes || ""}
+              onChange={(e) => updateField("notes", e.target.value)}
+              className="w-full bg-neutral-900 border border-neutral-800 rounded-lg p-2.5 text-xs font-extrabold text-white focus:border-emerald-500 outline-none"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 bg-neutral-800 hover:bg-neutral-700 text-white font-extrabold text-xs py-3 rounded-xl transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs py-3 rounded-xl transition-all shadow-[0_0_20px_rgba(16,185,129,0.3)]"
+            >
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 const TRADE_TYPE_OPTIONS = [
   "BUY",
@@ -203,7 +310,7 @@ export default function JournalPage() {
   const handleDeleteTrade = (tradeId: string) => {
     confirm({
       title: "DELETE TRADE",
-      message: "Kya aap is trade ko delete karna chahte hain?",
+      message: "Are you sure you want to delete this trade?",
       onConfirm: async () => {
         try {
           const { error } = await supabase
@@ -220,7 +327,7 @@ export default function JournalPage() {
           showAlert({ title: "SUCCESS", message: "Trade deleted successfully!", isSuccess: true });
         } catch (err: any) {
           console.error("Delete exception:", err);
-          showAlert({ title: "ERROR", message: "Trade delete karne mein problem aayi." });
+          showAlert({ title: "ERROR", message: "There was a problem deleting the trade." });
         }
       }
     });
@@ -366,7 +473,7 @@ export default function JournalPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-800/80 pb-5">
         <div>
           <h1 className="text-3xl font-extrabold text-emerald-400 drop-shadow-[0_0_12px_rgba(16,185,129,0.3)] tracking-wider">
-            VALT Trade Journal
+            VAULT Trade Journal
           </h1>
           <p className="text-xs text-neutral-400 mt-1 font-bold">
             Manual Trade Logging & Institutional Psychology Insights

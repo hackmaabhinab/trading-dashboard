@@ -24,7 +24,7 @@ export default function PricingPage() {
           Unlock Institutional Trading Tools
         </h1>
         <p className="text-sm sm:text-base text-[#787b86] max-w-2xl mx-auto">
-          Get full access to Valt Terminal algorithms, ICT/SMC indicator suites, real-time alerts, and premium trading analytics.
+          Get full access to VAULT Terminal algorithms, ICT/SMC indicator suites, real-time alerts, and premium trading analytics.
         </p>
       </div>
 
@@ -55,7 +55,7 @@ export default function PricingPage() {
               <p className="font-bold text-white text-xs uppercase tracking-wider mb-2">What&apos;s Included:</p>
               <div className="flex items-center gap-2.5 text-[#d1d4dc]">
                 <CheckCircle2 className="w-4 h-4 text-[#089981] shrink-0" />
-                <span>Full Valt Terminal Access (3 Months)</span>
+                <span>Full VAULT Terminal Access (3 Months)</span>
               </div>
               <div className="flex items-center gap-2.5 text-[#d1d4dc]">
                 <CheckCircle2 className="w-4 h-4 text-[#089981] shrink-0" />
@@ -101,7 +101,7 @@ export default function PricingPage() {
             <div className="mb-6">
               <div className="flex items-baseline gap-1">
                 <span className="text-2xl font-bold text-white">₹</span>
-                <span className="text-5xl font-black text-white">1,000</span>
+                <span className="text-5xl font-black text-white">999</span>
                 <span className="text-xs text-[#787b86]">/ year</span>
               </div>
               <p className="text-xs text-[#089981] mt-1 font-medium">Just ₹83/month • Best value for traders</p>
@@ -114,7 +114,7 @@ export default function PricingPage() {
               <p className="font-bold text-white text-xs uppercase tracking-wider mb-2">Everything in Quarterly + VIP Perks:</p>
               <div className="flex items-center gap-2.5 text-[#d1d4dc]">
                 <CheckCircle2 className="w-4 h-4 text-[#089981] shrink-0" />
-                <span><strong>12 Months Full Access</strong> to Valt Terminal</span>
+                <span><strong>12 Months Full Access</strong> to VAULT Terminal</span>
               </div>
               <div className="flex items-center gap-2.5 text-[#d1d4dc]">
                 <CheckCircle2 className="w-4 h-4 text-[#089981] shrink-0" />
@@ -136,7 +136,7 @@ export default function PricingPage() {
           </div>
 
           <button
-            onClick={() => handleSelectPlan('Annual VIP Plan (1 Year)', 1000)}
+            onClick={() => handleSelectPlan('Annual VIP Plan (1 Year)', 999)}
             className="w-full bg-[#089981] hover:bg-[#067361] text-black font-extrabold py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 text-xs shadow-lg shadow-[#089981]/20 active:scale-[0.98]"
           >
             Get 1 Year VIP Pass <Zap className="w-4 h-4 fill-black" />

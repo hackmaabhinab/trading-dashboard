@@ -196,7 +196,7 @@ export default function OverviewPage() {
         <div>
           <div className="flex items-center gap-2">
             <span className="bg-emerald-500/10 text-emerald-400 text-xs px-2.5 py-0.5 rounded-full font-mono font-semibold border border-emerald-500/20">
-              VALT TERMINAL
+              VAULT TERMINAL
             </span>
             <span className="text-zinc-500 text-xs">• Dynamic Journal Sync Active</span>
           </div>
@@ -405,7 +405,7 @@ export default function OverviewPage() {
               <div className="flex items-center gap-2">
                 <Zap className="w-4 h-4 text-emerald-400" />
                 <h3 className="text-sm font-bold text-emerald-400 tracking-wider">
-                  VALT AI EXECUTION
+                  VAULT AI EXECUTION
                 </h3>
               </div>
               <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30 font-mono">
@@ -476,7 +476,7 @@ export default function OverviewPage() {
 
             <div className="text-xs text-zinc-500 py-4 text-center space-y-1">
               <p>Automated Rule Compliance & Daily Drawdown Monitoring.</p>
-              <p className="text-[10px] text-zinc-600">Feature unlock in next VALT version release.</p>
+              <p className="text-[10px] text-zinc-600">Feature unlock in next VAULT version release.</p>
             </div>
           </div>
         </div>

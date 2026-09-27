@@ -92,7 +92,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Menu className="w-5 h-5 text-emerald-400" />
             </button>
             <span className="text-xs font-bold font-mono tracking-widest text-emerald-400 uppercase">
-              VALT SYS
+              VAULT SYS
             </span>
           </div>
         </header>
@@ -114,7 +114,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   <div className="p-4 space-y-6">
     <div className="flex items-center justify-between border-b border-neutral-800/80 pb-3 gap-6">
       <span className="text-xs font-bold font-mono tracking-widest text-emerald-400 uppercase whitespace-nowrap">
-        VALT SYS
+        VAULT SYS
       </span>
       <button 
         onClick={() => setMobileOpen(false)}
@@ -165,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
               {isExpanded && (
                 <span className="text-xs font-bold font-mono tracking-widest text-emerald-400 pr-1 uppercase">
-                  VALT SYS
+                  VAULT SYS
                 </span>
               )}
             </div>

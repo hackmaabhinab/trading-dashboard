@@ -2,8 +2,10 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Maximize, Minimize } from 'lucide-react';
+import { useConfirm } from '../layout';
 
 export default function DedicatedChartPage() {
+  const { showAlert } = useConfirm();
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -65,7 +67,7 @@ export default function DedicatedChartPage() {
     if (!wrapperRef.current) return;
     if (!document.fullscreenElement) {
       wrapperRef.current.requestFullscreen().catch((err) => {
-        alert(`Error enabling fullscreen: ${err.message}`);
+        showAlert({ title: 'FULLSCREEN ERROR', message: err instanceof Error ? err.message : 'Could not enable fullscreen mode.' });
       });
     } else {
       document.exitFullscreen();

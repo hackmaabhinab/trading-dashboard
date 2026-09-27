@@ -37,7 +37,7 @@ export default function ExplorerSplash({ onComplete }: { onComplete?: () => void
 
       {/* Main Animated Logo Box */}
       <div className="relative flex flex-col items-center gap-6">
-        {/* Volt Logo Icon with Pulsing Outer Ring */}
+        {/* VAULT Logo Icon with Pulsing Outer Ring */}
         <div className="relative flex items-center justify-center w-24 h-24">
           {/* Outer Pulsing Ring */}
           <div className="absolute inset-0 rounded-full border-2 border-emerald-500/30 animate-ping duration-1000" />
@@ -52,7 +52,7 @@ export default function ExplorerSplash({ onComplete }: { onComplete?: () => void
         {/* Brand Name & Loading Indicator */}
         <div className="flex flex-col items-center space-y-2 text-center z-10">
           <h1 className="text-2xl font-black tracking-widest text-white uppercase">
-            VOLT <span className="text-emerald-400">TERMINAL</span>
+            VAULT <span className="text-emerald-400">TERMINAL</span>
           </h1>
 
           <div className="flex items-center gap-2 text-neutral-400 text-[11px] font-bold tracking-widest uppercase">

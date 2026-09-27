@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const { secret, ticket_id, symbol, trade_type, volume, open_price, close_price, profit, user_id } = body;
 
     // 1. Secret Token Security Check
-    if (secret !== "VALT_MT5_7839X") {
+    if (secret !== "VAULT_MT5_7839X") {
       return NextResponse.json({ error: "Unauthorized Secret Token" }, { status: 401 });
     }
 

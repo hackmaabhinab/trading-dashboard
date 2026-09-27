@@ -2,23 +2,24 @@
 
 import React, { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle2, ShieldCheck, Copy, ArrowRight, Lock, User, Mail, Hash, PhoneCall, IndianRupee } from 'lucide-react';
+import { CheckCircle2, ShieldCheck, Copy, ArrowRight, User, Mail, Hash, PhoneCall, IndianRupee } from 'lucide-react';
 import Link from 'next/link';
+import { useFeedback } from '@/components/feedback-provider';
 
 function PaymentContent() {
   const searchParams = useSearchParams();
+  const { showAlert } = useFeedback();
 
   // Read selected plan & amount dynamically from URL query parameters
   const selectedPlan = searchParams.get('plan') || 'Quarterly Plan (3 Months)';
-  const rawAmount = searchParams.get('amount') || '399';
-  const subscriptionAmount = Number(rawAmount).toLocaleString('en-IN'); // Formats correctly (e.g., 1,000 or 399)
+  const rawAmount = selectedPlan === 'Annual VIP Plan (1 Year)' ? '999' : searchParams.get('amount') || '399';
+  const subscriptionAmount = Number(rawAmount).toLocaleString('en-IN'); // Formats the selected amount for display
 
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     username: '',
     email: '',
-    password: '',
     upiName: '',
     utrNumber: '',
   });
@@ -61,11 +62,11 @@ const handleSubmit = async (e: React.FormEvent) => {
         setIsSubmitted(true);
       } else {
         // Displays the actual database error instead of generic message
-        alert(`Error: ${result.error || "Submission failed"}`);
+        showAlert({ title: 'PAYMENT SUBMISSION FAILED', message: result.error || 'The submission could not be completed.' });
       }
     } catch (err: any) {
       console.error(err);
-      alert("Submission failed. Check network connection.");
+      showAlert({ title: 'CONNECTION ERROR', message: 'Payment submission failed. Check your internet connection and try again.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -253,22 +254,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                   required
                   placeholder="john@example.com"
                   value={formData.email}
-                  onChange={handleChange}
-                  className="w-full bg-[#1e222d] border border-[#2a2e39] rounded-xl pl-9 pr-3 py-2.5 text-white outline-none focus:border-[#2962ff]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[#787b86] mb-1 font-medium">Password</label>
-              <div className="relative">
-                <Lock className="w-4 h-4 absolute left-3 top-3 text-[#787b86]" />
-                <input
-                  type="password"
-                  name="password"
-                  required
-                  placeholder="••••••••"
-                  value={formData.password}
                   onChange={handleChange}
                   className="w-full bg-[#1e222d] border border-[#2a2e39] rounded-xl pl-9 pr-3 py-2.5 text-white outline-none focus:border-[#2962ff]"
                 />

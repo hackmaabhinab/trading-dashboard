@@ -49,7 +49,7 @@ export default function LoginPage() {
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-xl font-bold text-emerald-400 tracking-wide font-mono uppercase">
-            Valt Terminal Login
+            VAULT Terminal Login
           </h1>
           <p className="text-xs text-neutral-500">Restricted Institutional Access</p>
         </div>

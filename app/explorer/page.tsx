@@ -101,7 +101,7 @@ const painPoints = [
     number: "01",
     title: "You Journal, But Never Know Why You Lose",
     description:
-      "Most traders log trades but never connect the dots. VALT AI reads your behavior, timing, tags, and outcomes to expose the pattern.",
+      "Most traders log trades but never connect the dots. VAULT AI reads your behavior, timing, tags, and outcomes to expose the pattern.",
     icon: "↯",
   },
   {
@@ -115,7 +115,7 @@ const painPoints = [
     number: "03",
     title: "You Have No Accountability System",
     description:
-      "Without structure or people watching the process, the same mistakes become habits. VALT gives your execution a feedback loop.",
+      "Without structure or people watching the process, the same mistakes become habits. VAULT gives your execution a feedback loop.",
     icon: "◌",
   },
 ];
@@ -123,7 +123,7 @@ const painPoints = [
 const testimonials = [
   {
     quote:
-      "I stopped guessing what was wrong with my trading. The patterns were already in my journal — VALT just showed me.",
+      "I stopped guessing what was wrong with my trading. The patterns were already in my journal — VAULT just showed me.",
     name: "Beta Trader",
     role: "Intraday FX",
   },
@@ -291,7 +291,7 @@ function HeroSplitVisual() {
           animate={{ y: [0, 3, 0] }}
           transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 0.6 }}
         >
-          <div className="panel-label">WITH VALT</div>
+          <div className="panel-label">WITH VAULT</div>
           <div className="avatar-shell happy">
             <div className="avatar-face">
               <span>•</span>
@@ -623,7 +623,7 @@ function FeaturePreview({ visual }: { visual: Feature["visual"] }) {
   }
 }
 
-export default function VoltLandingExplorer() {
+export default function VAULTLandingExplorer() {
   const router = useRouter();
   const [activeFeature, setActiveFeature] = useState("overview");
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -2699,9 +2699,9 @@ export default function VoltLandingExplorer() {
         <header className="nav-shell">
           <div className="container">
             <nav className="nav">
-              <button className="brand" onClick={() => router.push("/")} aria-label="VOLT TERMINAL home">
+              <button className="brand" onClick={() => router.push("/")} aria-label="VAULT TERMINAL home">
                 <span className="brand-bolt">ϟ</span>
-                VOLT TERMINAL
+                VAULT TERMINAL
               </button>
 
               <div className="desktop-nav">
@@ -2765,10 +2765,10 @@ Sign Up
                   </div>
                   <h1 className="hero-title">
                     Your Trading Journal Isn&apos;t Solving Your Biggest Problem
-                    <span>VALT finds the leak.</span>
+                    <span>VAULT finds the leak.</span>
                   </h1>
                   <p className="hero-sub">
-                    Most traders journal, but never analyze. VALT changes that.
+                    Most traders journal, but never analyze. VAULT changes that.
                     Log the trade, understand the behavior, catch the macro risk,
                     and build rules you can actually follow.
                   </p>
@@ -2925,7 +2925,7 @@ Sign Up
                   transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <div className="reel-window-bar">
-                    <span>VALT JOURNAL</span>
+                    <span>VAULT JOURNAL</span>
                     <b>● AUTO SYNC READY</b>
                   </div>
                   <div className="reel-dashboard">
@@ -3128,7 +3128,7 @@ Sign Up
                   transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <div className="reel-window-bar">
-                    <span>VALT PERFORMANCE · 30 DAY REVIEW</span>
+                    <span>VAULT PERFORMANCE · 30 DAY REVIEW</span>
                     <b>● IMPROVING</b>
                   </div>
                   <div className="profit-ui">
@@ -3373,7 +3373,7 @@ Sign Up
                   </div>
                   <h2>
                     Your journal already has the answers.
-                    <span style={{ display: "block", color: "#34d399" }}>VALT helps you see them.</span>
+                    <span style={{ display: "block", color: "#34d399" }}>VAULT helps you see them.</span>
                   </h2>
                   <p>
                     Build the system once. Get the feedback every week. Make your next
@@ -3408,7 +3408,7 @@ Sign Up
               <div>
                 <button className="brand" onClick={() => router.push("/")}>
                   <span className="brand-bolt">ϟ</span>
-                  VOLT TERMINAL
+                  VAULT TERMINAL
                 </button>
                 <p style={{ marginTop: 16, maxWidth: 390 }}>
                   A trading journal + AI coaching platform built to turn execution data
@@ -3442,7 +3442,7 @@ Sign Up
 
             <div className="footer-bottom">
               <div className="disclaimer">
-                © {new Date().getFullYear()} VOLT TERMINAL. All rights reserved.
+                © {new Date().getFullYear()} VAULT TERMINAL. All rights reserved.
               </div>
               <div>Built for traders who want a tighter feedback loop.</div>
             </div>

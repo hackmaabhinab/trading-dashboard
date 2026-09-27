@@ -167,7 +167,7 @@ export default function CommunityPage() {
         setPostText('');
         setChartUrl('');
         setShowChartInput(false);
-        showAlert({ title: "PUBLISHED", message: "Aapki post successfully community feed par share ho gayi hai!", isSuccess: true });
+        showAlert({ title: "PUBLISHED", message: "Your post was published to the community.", isSuccess: true });
       }
     } catch (err: any) {
       showAlert({ title: "ERROR", message: `Failed to publish post: ${err.message}`, isSuccess: false });
@@ -184,7 +184,7 @@ export default function CommunityPage() {
 
     confirm({
       title: "DELETE COMMUNITY POST",
-      message: "Kya aap is post ko community feed se delete karna chahte hain?",
+      message: "Are you sure you want to delete this post from the community feed?",
       onConfirm: async () => {
         try {
           const { error } = await supabase
@@ -195,7 +195,7 @@ export default function CommunityPage() {
           if (error) throw error;
 
           setPosts((prevPosts) => prevPosts.filter((p) => p.id !== postId));
-          showAlert({ title: "DELETED", message: "Post successfully delete ho gayi!", isSuccess: true });
+          showAlert({ title: "DELETED", message: "The post was deleted successfully.", isSuccess: true });
         } catch (err: any) {
           showAlert({ title: "ERROR", message: `Failed to delete post: ${err.message}`, isSuccess: false });
         }
@@ -234,7 +234,7 @@ export default function CommunityPage() {
 
       setPosts(posts.map(p => p.id === postId ? { ...p, replies: updatedReplies } : p));
       setReplyInputs({ ...replyInputs, [postId]: '' });
-      showAlert({ title: "REPLIED", message: "Aapka reply successfully post ho gaya!", isSuccess: true });
+      showAlert({ title: "REPLIED", message: "Your reply was posted successfully.", isSuccess: true });
     } catch (err: any) {
       showAlert({ title: "ERROR", message: `Failed to add reply: ${err.message}`, isSuccess: false });
     }
@@ -318,7 +318,7 @@ export default function CommunityPage() {
 
           <div className="space-y-1.5 max-w-sm">
             <span className="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase tracking-widest">
-              VALT SYS COMMUNITY
+              VAULT SYS COMMUNITY
             </span>
             <h2 className="text-2xl font-black text-white tracking-tight uppercase">
               COMING SOON

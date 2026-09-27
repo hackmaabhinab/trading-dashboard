@@ -12,7 +12,7 @@ export default function LiveMarketNewsPage() {
     {
       role: "assistant",
       content:
-        "Namaste Abhinav! Main VALT Macro AI Assistant hoon. Aane wale CPI, NFP, ya Fed Interest Rate data ka Gold (XAUUSD), BTC, ya Forex pairs par kya impact hoga, poochhiye!",
+        "Namaste Abhinav! Main VAULT Macro AI Assistant hoon. Aane wale CPI, NFP, ya Fed Interest Rate data ka Gold (XAUUSD), BTC, ya Forex pairs par kya impact hoga, poochhiye!",
     },
   ]);
   const [input, setInput] = useState("");
@@ -133,7 +133,7 @@ export default function LiveMarketNewsPage() {
         <div>
           <h1 className="text-base sm:text-xl font-bold tracking-wide text-zinc-100 flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            Macro Economic Wire & VALT Terminal
+            Macro Economic Wire & VAULT Terminal
           </h1>
           <p className="text-[10px] sm:text-xs text-zinc-400 mt-0.5 sm:mt-1">
             Real-Time Institutional Forex, Crypto & Economic Feed
@@ -195,10 +195,10 @@ export default function LiveMarketNewsPage() {
       <div className="w-full bg-black border border-zinc-900 rounded-xl p-3 sm:p-5 shadow-2xl space-y-3 sm:space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-zinc-900 pb-2.5 sm:pb-3 gap-2">
           <h2 className="text-xs sm:text-base font-semibold tracking-wider text-cyan-400 uppercase flex items-center gap-2">
-            🤖 VALT MACRO AI PREDICTOR
+            🤖 VAULT MACRO AI PREDICTOR
           </h2>
           <span className="text-[10px] sm:text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2.5 py-0.5 sm:py-1 rounded-md font-mono">
-            VOLT NEWS TERMINAL AI ACTIVE
+            VAULT NEWS TERMINAL AI ACTIVE
           </span>
         </div>
 
@@ -224,7 +224,7 @@ export default function LiveMarketNewsPage() {
           ))}
           {loading && (
             <div className="text-[11px] sm:text-xs text-cyan-400 animate-pulse p-1 sm:p-2 font-mono">
-              VALT AI is analyzing macro news & trade setups...
+              VAULT AI is analyzing macro news & trade setups...
             </div>
           )}
         </div>

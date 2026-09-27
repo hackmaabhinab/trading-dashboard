@@ -193,7 +193,7 @@ export default function AnalyticsPage() {
     e.stopPropagation();
     confirm({
       title: "DELETE CHAT SESSION",
-      message: "Kya aap is chat session ko delete karna chahte hain?",
+      message: "Are you sure you want to delete this chat session?",
       onConfirm: () => {
         const updated = sessions.filter((s) => s.id !== sessionId);
         saveSessionsToStorage(updated);
@@ -258,7 +258,7 @@ export default function AnalyticsPage() {
       const voltMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: "volt",
-        text: data.reply || "Unable to fetch analysis from VOLT Terminal.",
+        text: data.reply || "Unable to fetch analysis from VAULT Terminal.",
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
 
@@ -273,7 +273,7 @@ export default function AnalyticsPage() {
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: "volt",
-        text: "Error connecting to VOLT AI Core. Check network or API key.",
+        text: "Error connecting to VAULT AI Core. Check network or API key.",
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       const finalMessages = [...newMessages, errorMsg];
@@ -320,7 +320,7 @@ export default function AnalyticsPage() {
                 </div>
               </div>
               <div className="overflow-hidden">
-                <h2 className="text-sm font-bold text-white tracking-wider font-mono truncate">VOLT AI</h2>
+                <h2 className="text-sm font-bold text-white tracking-wider font-mono truncate">VAULT AI</h2>
                 <p className="text-[10px] text-neutral-500 truncate">Your Personal Coach</p>
               </div>
             </div>
@@ -414,7 +414,7 @@ export default function AnalyticsPage() {
               </button>
             )}
             <span className="text-xs font-semibold text-neutral-300 font-mono tracking-wider">
-              VOLT TERMINAL / ANALYTICS
+              VAULT TERMINAL / ANALYTICS
             </span>
           </div>
         </div>
@@ -529,7 +529,7 @@ export default function AnalyticsPage() {
                     {m.sender === "volt" ? (
                       <div>
                         <span className="text-[10px] font-mono text-emerald-400 font-bold block mb-2 uppercase tracking-wider">
-                          VOLT AI
+                          VAULT AI
                         </span>
                         <div className="space-y-2 text-xs leading-6 text-neutral-300 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&_strong]:text-white [&_strong]:font-bold">
                           <ReactMarkdown>{m.text}</ReactMarkdown>
@@ -552,7 +552,7 @@ export default function AnalyticsPage() {
                   </div>
                   <div className="bg-[#111111] border border-neutral-800 rounded-2xl p-3.5 text-xs text-neutral-400 flex items-center gap-2 italic">
                     <span className="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-ping" />
-                    VOLT AI is analyzing your journal data...
+                    VAULT AI is analyzing your journal data...
                   </div>
                 </div>
               )}

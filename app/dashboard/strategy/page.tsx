@@ -18,6 +18,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import { useConfirm } from '../layout';
 
 // -------------------------------------------------------------
 // AAPKE ADMIN EMAILS KO YAHAN DEFINE KAREIN
@@ -137,6 +138,7 @@ const DEFAULT_RECOMMENDED_STRATEGIES: Strategy[] = [
 
 export default function StrategyPage() {
   const supabase = createClient();
+  const { confirm, showAlert } = useConfirm();
 
   // User Auth & Secure Admin State (DEFAULT = FALSE)
   const [userId, setUserId] = useState<string | null>(null);
@@ -259,7 +261,7 @@ export default function StrategyPage() {
   // Single-User Single-Like Logic
   const handleToggleLike = async (strategyId: string) => {
     if (!userId) {
-      alert('Please login to like strategies!');
+      showAlert({ title: 'SIGN IN REQUIRED', message: 'Please sign in to like strategies.' });
       return;
     }
 
@@ -319,12 +321,12 @@ export default function StrategyPage() {
   const handleSaveStrategy = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isAdmin) {
-      alert('Unauthorized access.');
+      showAlert({ title: 'ACCESS DENIED', message: 'You are not authorized to manage strategies.' });
       return;
     }
 
     if (!title || !description || !winRate || !riskReward || !timeframe) {
-      alert('Please fill out all required strategy fields.');
+      showAlert({ title: 'MISSING INFORMATION', message: 'Please fill out all required strategy fields.' });
       return;
     }
 
@@ -402,12 +404,22 @@ export default function StrategyPage() {
   // ADMIN ACTION: Delete
   const handleDeleteStrategy = async (id: string) => {
     if (!isAdmin) return;
-    if (!confirm('Are you sure you want to delete this strategy model?')) return;
-
-    if (!id.startsWith('rec-') && !id.startsWith('local-')) {
-      await supabase.from('strategies').delete().eq('id', id);
-    }
-    setStrategies((prev) => prev.filter((s) => s.id !== id));
+    confirm({
+      title: 'DELETE STRATEGY',
+      message: 'Are you sure you want to delete this strategy?',
+      onConfirm: async () => {
+        try {
+          if (!id.startsWith('rec-') && !id.startsWith('local-')) {
+            const { error } = await supabase.from('strategies').delete().eq('id', id);
+            if (error) throw error;
+          }
+          setStrategies((prev) => prev.filter((s) => s.id !== id));
+          showAlert({ title: 'DELETED', message: 'The strategy was deleted successfully.', isSuccess: true });
+        } catch (error) {
+          showAlert({ title: 'DELETE FAILED', message: error instanceof Error ? error.message : 'The strategy could not be deleted.' });
+        }
+      },
+    });
   };
 
   // ADMIN ACTION: Open Modal

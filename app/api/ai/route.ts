@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     // 3. AI PROMPT ENGINEERING (Analysis Types)
     // ==========================================
     const systemPrompt = `
-      You are VOLT AI, an elite institutional trading coach. The user is asking: "${message}"
+      You are VAULT AI, an elite institutional trading coach. The user is asking: "${message}"
       
       User's Overall Performance:
       - Total Trades: ${currentTradeCount}
@@ -115,7 +115,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ reply: text });
 
   } catch (error) {
-    console.error("Volt AI Error:", error);
+    console.error("VAULT AI Error:", error);
     return NextResponse.json(
       { reply: "⚠️ Analysis generation failed. Please check your data connection and API keys." },
       { status: 500 }
