@@ -38,7 +38,11 @@ export async function POST(request: Request) {
         .from('affiliate_accounts').select('user_id').eq('referral_code', referralCode).maybeSingle();
       if (affiliateError) throw affiliateError;
       if (!affiliate) return NextResponse.json({ error: 'This affiliate link is invalid or expired.' }, { status: 400 });
-      affiliateUserId = affiliate.user_id;
+      const resolvedAffiliateUserId = affiliate.user_id;
+      if (typeof resolvedAffiliateUserId !== 'string' || !resolvedAffiliateUserId) {
+        return NextResponse.json({ error: 'This affiliate link is invalid or expired.' }, { status: 400 });
+      }
+      affiliateUserId = resolvedAffiliateUserId;
       const { data: referredUser, error: referredUserError } = await admin.auth.admin.getUserById(affiliateUserId);
       if (referredUserError) throw referredUserError;
       if (referredUser.user?.email?.toLowerCase() === email) {
