@@ -25,7 +25,10 @@ export async function POST(request: Request) {
     const planName = String(body.planName ?? '');
     const referralCode = String(body.affiliateCode ?? '').trim().toUpperCase();
 
-    if (!firstName || !lastName || !username || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !upiName || !/^\d{12}$/.test(utrNumber)) {
+    if (!/^\d{12}$/.test(utrNumber)) {
+      return NextResponse.json({ error: 'UTR / reference number must contain exactly 12 digits.' }, { status: 400 });
+    }
+    if (!firstName || !lastName || !username || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !upiName) {
       return NextResponse.json({ error: 'Enter valid account and payment details.' }, { status: 400 });
     }
     const originalAmount = PLAN_PRICES[planName];
