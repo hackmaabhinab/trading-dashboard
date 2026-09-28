@@ -12,8 +12,12 @@ function PaymentContent() {
 
   // Read selected plan & amount dynamically from URL query parameters
   const selectedPlan = searchParams.get('plan') || 'Quarterly Plan (3 Months)';
-  const rawAmount = selectedPlan === 'Annual VIP Plan (1 Year)' ? '999' : searchParams.get('amount') || '399';
-  const subscriptionAmount = Number(rawAmount).toLocaleString('en-IN'); // Formats the selected amount for display
+  const originalAmountValue = selectedPlan === 'Annual VIP Plan (1 Year)' ? 999 : 399;
+  const affiliateCode = searchParams.get('ref')?.trim().toUpperCase() || '';
+  const discountAmountValue = affiliateCode ? Math.round(originalAmountValue * 0.30 * 100) / 100 : 0;
+  const amountPaidValue = Math.round((originalAmountValue - discountAmountValue) * 100) / 100;
+  const formatAmount = (amount: number) => amount.toLocaleString('en-IN', { minimumFractionDigits: amount % 1 ? 2 : 0, maximumFractionDigits: 2 });
+  const subscriptionAmount = formatAmount(amountPaidValue);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -51,7 +55,8 @@ const handleSubmit = async (e: React.FormEvent) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           ...formData, 
-          amount: Number(rawAmount),
+          amount: amountPaidValue,
+          affiliateCode,
           planName: selectedPlan 
         }),
       });
@@ -142,8 +147,10 @@ const handleSubmit = async (e: React.FormEvent) => {
               <span className="text-[11px] text-[#787b86] uppercase tracking-wider font-semibold">
                 {selectedPlan}
               </span>
+              {affiliateCode && <div className="mb-2 flex items-center justify-between text-xs"><span className="text-slate-400">Original price</span><span className="text-slate-300 line-through">₹{formatAmount(originalAmountValue)}</span></div>}
+                {affiliateCode && <div className="mb-2 flex items-center justify-between text-xs"><span className="text-emerald-300">Affiliate discount (30%)</span><span className="text-emerald-300">−₹{formatAmount(discountAmountValue)}</span></div>}
               <div className="flex items-center justify-between">
-                <span className="text-xs text-slate-300 font-medium">Subscription Fee:</span>
+                <span className="text-xs text-slate-300 font-medium">Amount to pay:</span>
                 <span className="text-xl font-black text-emerald-400 font-mono flex items-center gap-0.5">
                   <IndianRupee className="w-4 h-4" />{subscriptionAmount}
                 </span>
@@ -321,3 +328,6 @@ export default function PaymentPage() {
     </Suspense>
   );
 }
+
+
+

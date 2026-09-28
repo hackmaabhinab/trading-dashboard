@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Trash2, Save, Loader2, Check, LogOut, ShieldAlert, KeyRound } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
-import { useConfirm } from "@/app/dashboard/layout"; 
+import { useConfirm } from "@/app/dashboard/layout";
+import AffiliatePanel from "@/components/affiliate-panel"; 
 
 export default function SettingsPage() {
   const supabase = createClient();
@@ -270,6 +271,8 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        <AffiliatePanel />
+
         {/* DIRECT PASSWORD CHANGE BOX */}
         <div className="bg-[#0A0A0A] border border-neutral-800/80 rounded-2xl p-7 space-y-5 shadow-2xl">
           <div className="flex items-center gap-2">
@@ -355,3 +358,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

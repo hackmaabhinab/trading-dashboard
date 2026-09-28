@@ -1,15 +1,25 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, Zap, ShieldCheck, ArrowRight, Sparkles, Star } from 'lucide-react';
 
 export default function PricingPage() {
   const router = useRouter();
+  const [affiliateCode, setAffiliateCode] = useState('');
+
+  useEffect(() => {
+    const candidate = new URLSearchParams(window.location.search).get('ref')?.trim().toUpperCase();
+    if (!candidate) return;
+    void fetch(`/api/affiliate/validate?code=${encodeURIComponent(candidate)}`).then((response) => response.json()).then((result) => {
+      if (result.valid && result.code) setAffiliateCode(result.code as string);
+    }).catch(() => undefined);
+  }, []);
 
   const handleSelectPlan = (planName: string, amount: number) => {
-    // Redirect to payment page with selected plan details in URL query
-    router.push(`/payment?plan=${encodeURIComponent(planName)}&amount=${amount}`);
+    const params = new URLSearchParams({ plan: planName, amount: String(amount) });
+    if (affiliateCode) params.set('ref', affiliateCode);
+    router.push(`/payment?${params.toString()}`);
   };
 
   return (
@@ -29,6 +39,9 @@ export default function PricingPage() {
       </div>
 
       {/* Pricing Cards Grid */}
+      <div className="max-w-4xl mx-auto w-full">
+        {affiliateCode && <p className="mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-center text-sm font-semibold text-emerald-300">Affiliate link applied — 30% off your plan at checkout.</p>}
+      </div>
       <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
         
         {/* PLAN 1: 3 MONTHS */}
@@ -188,3 +201,7 @@ export default function PricingPage() {
     </div>
   );
 }
+
+
+
+
