@@ -31,12 +31,15 @@ function PaymentContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [utrError, setUtrError] = useState('');
 
   // Exact UPI ID
   const adminUpiId = "abhinavpandit8990@okhdfcbank"; 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.name === 'utrNumber' ? e.target.value.replace(/\D/g, '').slice(0, 12) : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
+    if (e.target.name === 'utrNumber') setUtrError('');
   };
 
   const handleCopyUpi = () => {
@@ -47,6 +50,10 @@ function PaymentContent() {
 
 const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!/^\d{12}$/.test(formData.utrNumber)) {
+      setUtrError('Enter the 12-digit UTR / reference number from your payment receipt.');
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -291,12 +298,17 @@ const handleSubmit = async (e: React.FormEvent) => {
                   name="utrNumber"
                   required
                   maxLength={12}
+                  inputMode="numeric"
+                  autoComplete="off"
+                  aria-invalid={Boolean(utrError)}
+                  aria-describedby={utrError ? 'utr-error' : undefined}
                   placeholder="e.g. 423156789012"
                   value={formData.utrNumber}
                   onChange={handleChange}
-                  className="w-full bg-[#1e222d] border border-[#089981]/50 rounded-xl pl-9 pr-3 py-2.5 text-white outline-none focus:border-[#089981] font-mono tracking-wider"
+                  className={`w-full bg-[#1e222d] border ${utrError ? 'border-red-500' : 'border-[#089981]/50'} rounded-xl pl-9 pr-3 py-2.5 text-white outline-none focus:border-[#089981] font-mono tracking-wider`}
                 />
               </div>
+              {utrError && <p id="utr-error" className="mt-1.5 text-xs text-red-400">{utrError}</p>}
             </div>
 
             <button
@@ -328,6 +340,5 @@ export default function PaymentPage() {
     </Suspense>
   );
 }
-
 
 

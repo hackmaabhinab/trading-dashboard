@@ -18,7 +18,10 @@ export default function PricingPage() {
 
   const handleSelectPlan = (planName: string, amount: number) => {
     const params = new URLSearchParams({ plan: planName, amount: String(amount) });
-    if (affiliateCode) params.set('ref', affiliateCode);
+    // Preserve the referral immediately, even if the validation request has not
+    // finished before the customer selects a plan. The payment API validates it.
+    const referral = new URLSearchParams(window.location.search).get('ref')?.trim().toUpperCase() || affiliateCode;
+    if (referral) params.set('ref', referral);
     router.push(`/payment?${params.toString()}`);
   };
 

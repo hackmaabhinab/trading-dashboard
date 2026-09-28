@@ -79,6 +79,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, paymentId: data.id, originalAmount, discountAmount, amountPaid }, { status: 200 });
   } catch (error) {
     console.error('Payment proof registration failed:', error);
-    return NextResponse.json({ error: 'Payment proof could not be submitted. Check your details and try again.' }, { status: 500 });
+    if (error instanceof Error && error.message === 'Server payment configuration is incomplete') {
+      return NextResponse.json({ error: 'Payment submission is not configured on the website. Please contact support.' }, { status: 503 });
+    }
+
+    const errorCode = typeof error === 'object' && error !== null && 'code' in error
+      ? String((error as { code?: unknown }).code ?? '')
+      : '';
+    if (errorCode === '23505') {
+      return NextResponse.json({ error: 'This UTR / reference number has already been submitted.' }, { status: 409 });
+    }
+    if (errorCode === 'PGRST204' || errorCode === '42703' || errorCode === '42P01') {
+      return NextResponse.json({ error: 'The payment database needs an update. Please contact support.' }, { status: 503 });
+    }
+    return NextResponse.json({ error: 'The payment service could not save this submission. Please try again shortly.' }, { status: 500 });
   }
 }
