@@ -1,9 +1,5 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 // Initialize Server-side Supabase for Caching (Admin access needed for edge routes usually, 
 // or pass user token from frontend)
@@ -14,6 +10,13 @@ const supabase = createClient(
 
 export async function POST(req: Request) {
   try {
+    if (!process.env.GROQ_API_KEY) {
+      return NextResponse.json(
+        { error: "VAULT AI is not configured on the website server. Add GROQ_API_KEY to the server environment." },
+        { status: 503 }
+      );
+    }
+
     const { message, module, tradesHistory, userId } = await req.json();
 
     if (!tradesHistory || tradesHistory.length === 0) {
@@ -92,9 +95,26 @@ export async function POST(req: Request) {
     // ==========================================
     // 4. GENERATE CONTENT
     // ==========================================
-    const model = genAI.getGenerativeModel({ model: "gemini-3.6-flash" });
-    const result = await model.generateContent(systemPrompt);
-    const text = result.response.text();
+    const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [{ role: "system", content: systemPrompt }],
+      }),
+    });
+    const groqResult = await groqResponse.json().catch(() => null) as {
+      choices?: Array<{ message?: { content?: string | null } }>;
+      error?: { message?: string };
+    } | null;
+    if (!groqResponse.ok) {
+      throw new Error(`Groq API HTTP ${groqResponse.status}: ${groqResult?.error?.message || "The AI provider rejected the request."}`);
+    }
+    const text = groqResult?.choices?.[0]?.message?.content?.trim();
+    if (!text) throw new Error("Groq API returned an empty response.");
 
     // ==========================================
     // 5. UPDATE CACHE IN DB (If userId is available)
@@ -116,8 +136,17 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error("VAULT AI Error:", error);
+    const providerMessage = error instanceof Error ? error.message : "Unknown AI provider error";
+    const safeDetails = providerMessage
+      .replace(/AIza[\w-]{20,}/g, "[redacted API key]")
+      .replace(/(x-goog-api-key\s*[:=]\s*)[^\s,;]+/gi, "$1[redacted]")
+      .replace(/https?:\/\/[^\s"']+/g, "[provider URL]")
+      .slice(0, 400);
     return NextResponse.json(
-      { reply: "⚠️ Analysis generation failed. Please check your data connection and API keys." },
+      {
+        error: "VAULT AI could not generate a response.",
+        details: safeDetails,
+      },
       { status: 500 }
     );
   }
