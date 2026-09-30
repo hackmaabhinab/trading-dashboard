@@ -11,6 +11,7 @@ import {
   useTransform,
 } from "framer-motion";
 import ExplorerSplash from "@/components/Explorersplash";
+import AppDownloadButton from "@/components/app-download-button";
 
 type Feature = {
   id: string;
@@ -766,6 +767,12 @@ export default function VAULTLandingExplorer() {
             transition: color 0.2s ease;
           }
 
+          .desktop-nav .app-download-button {
+            min-height: 40px;
+            color: #6ee7b7;
+            font-size: 12px;
+          }
+
           .desktop-nav button:hover,
           .footer-link:hover {
             color: #fff;
@@ -863,6 +870,13 @@ export default function VAULTLandingExplorer() {
             color: #dbe5f2;
             text-align: left;
             font-weight: 700;
+          }
+
+          .mobile-menu .app-download-button {
+            justify-content: flex-start;
+            width: calc(100% - 20px);
+            margin: 10px;
+            border-bottom: 1px solid rgba(52, 211, 153, 0.25);
           }
 
           .hero {
@@ -2709,6 +2723,7 @@ export default function VAULTLandingExplorer() {
                 <button onClick={() => scrollTo("how-it-works")}>How It Works</button>
                 <button onClick={() => scrollTo("proof")}>Results</button>
                 <button onClick={() => scrollTo("pricing")}>Pricing</button>
+                <AppDownloadButton />
               </div>
 
               <div className="nav-actions">
@@ -2747,6 +2762,7 @@ Sign Up
                   <button onClick={() => scrollTo("how-it-works")}>How It Works</button>
                   <button onClick={() => scrollTo("proof")}>Results</button>
                   <button onClick={() => scrollTo("pricing")}>Pricing</button>
+                  <AppDownloadButton />
                   <button onClick={() => router.push("/login")}>Log In</button>
                 </motion.div>
               )}

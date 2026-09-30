@@ -5,6 +5,7 @@ import { Trash2, Save, Loader2, Check, LogOut, ShieldAlert, KeyRound } from "luc
 import { createClient } from "@/utils/supabase/client";
 import { useConfirm } from "@/app/dashboard/layout";
 import AffiliatePanel from "@/components/affiliate-panel"; 
+import AppDownloadButton from "@/components/app-download-button";
 
 export default function SettingsPage() {
   const supabase = createClient();
@@ -240,6 +241,16 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* ANDROID APP DOWNLOAD */}
+        <section className="flex flex-col gap-4 rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-950/30 to-[#0A0A0A] p-6 shadow-xl sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-black uppercase tracking-widest text-emerald-400">VAULT MOBILE</p>
+            <h2 className="mt-1 text-lg font-black text-white">Take your trading journal with you</h2>
+            <p className="mt-1 text-sm text-neutral-400">Install the Android app to review your trades and analytics on the go.</p>
+          </div>
+          <AppDownloadButton className="min-h-12 px-5" />
+        </section>
 
         {/* ACCOUNT CREDENTIALS BOX */}
         <div className="bg-[#0A0A0A] border border-neutral-800/80 rounded-2xl p-7 space-y-5 shadow-2xl">
