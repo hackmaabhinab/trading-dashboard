@@ -36,6 +36,38 @@ interface ChatSession {
   createdAt: string;
 }
 
+type AnalysisMode = "trade_review" | "risk_check" | "psychology_coach" | "performance_edge";
+
+function normalizeAssistantMarkdown(value: string) {
+  const lines = value.replace(/<br\s*\/?>/gi, "\n").split(/\r?\n/);
+  const formatted: string[] = [];
+  const readCells = (line: string) => line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
+
+  for (let index = 0; index < lines.length;) {
+    const cells = readCells(lines[index]);
+    const separatorCells = lines[index + 1] ? readCells(lines[index + 1]) : [];
+    const isTable = lines[index].trim().startsWith("|") && separatorCells.length > 0 && separatorCells.every((cell) => /^:?-{3,}:?$/.test(cell));
+    if (!isTable) {
+      formatted.push(lines[index]);
+      index += 1;
+      continue;
+    }
+
+    const headers = cells;
+    index += 2;
+    while (index < lines.length && lines[index].trim().startsWith("|")) {
+      const row = readCells(lines[index]);
+      if (row.length) {
+        const details = row.slice(1).map((cell, cellIndex) => `${headers[cellIndex + 1] || `Detail ${cellIndex + 1}`}: ${cell}`).join(" · ");
+        formatted.push(`- **${row[0]}**${details ? ` — ${details}` : ""}`);
+      }
+      index += 1;
+    }
+  }
+
+  return formatted.join("\n");
+}
+
 export default function AnalyticsPage() {
   const { confirm, showAlert } = useConfirm();
 
@@ -46,7 +78,7 @@ export default function AnalyticsPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(false);
-  const [tradesHistory, setTradesHistory] = useState<any[]>([]);
+  const [tradesHistory, setTradesHistory] = useState<Record<string, unknown>[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPromptCategory, setSelectedPromptCategory] = useState<number>(0);
   
@@ -59,42 +91,41 @@ export default function AnalyticsPage() {
   const supabase = createClient();
 
   // Quick Prompts & Sub-questions Mapping
-  const promptCategories = [
+  const promptCategories: { mode: AnalysisMode; main: string; subPrompts: string[] }[] = [
     {
-      main: "Why Am I Losing?",
+      mode: "trade_review",
+      main: "Trade Review",
       subPrompts: [
-        "What am I doing wrong lately?",
-        "What's causing my drawdowns?",
-        "Find the pattern in my losing trades",
-        "Show me my most expensive mistakes",
-        "Which trades hurt my account the most?",
+        "Review my most recent trades using only recorded details.",
+        "Compare my winning and losing trades from my journal.",
+        "What information is missing to review my entries and exits properly?",
       ],
     },
     {
-      main: "Where's My Edge?",
+      mode: "risk_check",
+      main: "Risk Check",
       subPrompts: [
-        "Which setups give me the highest R:R?",
-        "What is my highest win-rate entry pattern?",
-        "Which trading session is most profitable for me?",
-        "Am I better at longing or shorting?",
+        "Check my recorded risk controls and tell me what is missing.",
+        "Can my journal verify my risk per trade and risk-to-reward?",
+        "Review my losing trades for risk warning signs without guessing.",
       ],
     },
     {
-      main: "Am I Following My Plan?",
+      mode: "psychology_coach",
+      main: "Psychology Coach",
       subPrompts: [
-        "Did I stick to my risk management rules?",
-        "How often do I break my stop loss rules?",
-        "Check my trade execution consistency",
-        "Am I taking trades outside my session window?",
+        "Review my psychology tags and notes for recurring patterns.",
+        "Do my notes show any repeatable emotional trading triggers?",
+        "Suggest a pre-trade reflection based on what I have logged.",
       ],
     },
     {
-      main: "How Do I Get Better?",
+      mode: "performance_edge",
+      main: "Performance & Edge",
       subPrompts: [
-        "Actionable roadmap to improve win-rate",
-        "How to optimize my position sizing?",
-        "What should I focus on fixing this week?",
-        "Give me 3 rules to reduce my drawdowns",
+        "Compare my results by strategy, symbol, and direction.",
+        "What does my full journal show about my performance so far?",
+        "What should I focus on improving based on my journal evidence?",
       ],
     },
   ];
@@ -205,7 +236,7 @@ export default function AnalyticsPage() {
     });
   };
 
-  const handleSendMessage = async (customText?: string) => {
+  const handleSendMessage = async (customText?: string, mode?: AnalysisMode) => {
     const queryText = customText || inputMessage;
     if (!queryText.trim() || loading) return;
 
@@ -248,12 +279,18 @@ export default function AnalyticsPage() {
         body: JSON.stringify({
           message: queryText,
           module: "analytics",
+          mode,
+          history: messages.slice(-8).map((message) => ({
+            role: message.sender === "user" ? "user" : "assistant",
+            content: message.text,
+          })),
           tradesHistory: tradesHistory,
           userId: userId // NEW: Passed userId in the payload
         }),
       });
 
       const data = await res.json();
+      if (!res.ok) throw new Error(data.details || data.error || `AI request failed (HTTP ${res.status}).`);
 
       const voltMsg: Message = {
         id: (Date.now() + 1).toString(),
@@ -273,7 +310,7 @@ export default function AnalyticsPage() {
       const errorMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: "volt",
-        text: "Error connecting to VAULT AI Core. Check network or API key.",
+        text: err instanceof Error ? err.message : "Error connecting to VAULT AI Core. Check network or API key.",
         time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       const finalMessages = [...newMessages, errorMsg];
@@ -468,7 +505,7 @@ export default function AnalyticsPage() {
                     key={idx}
                     onClick={() => {
                       setSelectedPromptCategory(idx);
-                      handleSendMessage(cat.main);
+                      handleSendMessage(cat.main, cat.mode);
                     }}
                     className={`px-4 py-2 rounded-full text-xs font-medium border transition-all ${
                       selectedPromptCategory === idx
@@ -486,7 +523,7 @@ export default function AnalyticsPage() {
                 {promptCategories[selectedPromptCategory].subPrompts.map((sub, idx) => (
                   <button
                     key={idx}
-                    onClick={() => handleSendMessage(sub)}
+                    onClick={() => handleSendMessage(sub, promptCategories[selectedPromptCategory].mode)}
                     className="flex items-center gap-2 text-xs text-neutral-400 hover:text-emerald-400 transition-colors w-full text-left group py-1"
                   >
                     <span className="text-neutral-600 group-hover:text-emerald-400">↳</span>
@@ -532,7 +569,7 @@ export default function AnalyticsPage() {
                           VAULT AI
                         </span>
                         <div className="space-y-2 text-xs leading-6 text-neutral-300 [&>ul]:list-disc [&>ul]:pl-4 [&>ol]:list-decimal [&>ol]:pl-4 [&_strong]:text-white [&_strong]:font-bold">
-                          <ReactMarkdown>{m.text}</ReactMarkdown>
+                          <ReactMarkdown>{normalizeAssistantMarkdown(m.text)}</ReactMarkdown>
                         </div>
                       </div>
                     ) : (
@@ -564,6 +601,18 @@ export default function AnalyticsPage() {
         {/* Bottom Sticky Input Field */}
         {messages.length > 0 && (
           <div className="p-4 border-t border-neutral-900 bg-[#0A0A0A] shrink-0">
+            <div className="max-w-3xl mx-auto flex gap-2 overflow-x-auto pb-2">
+              {promptCategories.map((category) => (
+                <button
+                  key={category.mode}
+                  onClick={() => handleSendMessage(category.main, category.mode)}
+                  disabled={loading}
+                  className="shrink-0 px-3 py-1.5 rounded-full text-[10px] font-medium border border-neutral-800 text-neutral-400 hover:text-emerald-300 hover:border-emerald-800 disabled:opacity-40"
+                >
+                  {category.main}
+                </button>
+              ))}
+            </div>
             <div className="max-w-3xl mx-auto relative flex items-center">
               <input
                 type="text"
